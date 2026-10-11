@@ -292,7 +292,7 @@ body.mob #settings,body.mob #upd,body.mob #gsel{z-index:10}
 .ctl-next{display:block;color:var(--muted);font-size:1.05rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ctl-r{text-align:right;display:flex;flex-direction:column;gap:.3rem;align-items:flex-end}
 .ctl-r .clock{font-size:1.8rem;color:var(--text);margin:0}
-.ctl-left{color:var(--amber);font-weight:700;font-variant-numeric:tabular-nums}
+.ctl-left{color:var(--amber);font-weight:700;font-size:1.25rem;letter-spacing:.02em;font-variant-numeric:tabular-nums}
 .ctl-time{display:flex;align-items:center;gap:1.2rem;margin:1rem 0 1.1rem;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
 .ctl-bar{flex:1;height:.35rem}
 .ctl-btns{display:flex;gap:1rem;align-items:center}
@@ -454,6 +454,20 @@ body.mob #ctl{display:none!important}
 @keyframes fxSleigh{from{transform:translate(-30vw,18vh) rotate(-6deg)}to{transform:translate(115vw,4vh) rotate(-6deg)}}
 @keyframes fxSpark{to{transform:translateY(2rem);opacity:0}}
 
+/* Часы и погода одним блоком */
+.wx-clock{display:flex;align-items:center;gap:1.3rem;padding:.55rem 1.3rem;border-radius:1.4rem;background:rgba(237,240,246,.06)}
+.wx-clock .clock{font-size:2.3rem!important;font-weight:700;color:var(--text)!important;letter-spacing:-.01em;line-height:1}
+.wx-sep{width:1px;height:2.6rem;background:rgba(237,240,246,.18)}
+.wx-clock .wx{gap:.6rem}
+.wx-clock .wx svg{width:3.2rem;height:3.2rem}
+.wx-t{display:flex;flex-direction:column;line-height:1.05}
+.wx-t b{font-size:2rem;font-weight:700;color:var(--text)}
+.wx-t small{font-size:.85rem;font-weight:600;color:var(--muted);margin-top:.15rem;white-space:nowrap}
+#topbar .wx-t b{font-size:1.4rem}
+#topbar .wx-t small{display:none}
+.ctl-grp{display:inline-block;margin-left:.8rem;padding:.1rem .6rem;border-radius:.5rem;background:rgba(237,240,246,.1);color:var(--text);font-size:.9rem}
+.wx .dr.fast{animation-duration:.75s}
+
 /* Сообщения */
 #toast{position:fixed;z-index:7;top:2.4rem;left:50%;transform:translate(-50%,-1rem);max-width:62rem;background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
   border:1px solid var(--line);padding:1rem 1.6rem;border-radius:1rem;font-size:1.15rem;font-weight:600;line-height:1.4;text-align:center;opacity:0;visibility:hidden;transition:opacity .3s,transform .3s,visibility .3s}
@@ -581,7 +595,7 @@ body.mob #ctl{display:none!important}
       <b class="ctl-prog" id="ctlProg"></b>
       <span class="ctl-next" id="ctlNext"></span>
     </div>
-    <div class="ctl-r"><div class="wx-clock"><span class="wx"></span><span class="clock"></span></div><span class="ctl-left" id="ctlLeft"></span></div>
+    <div class="ctl-r"><div class="wx-clock"><span class="clock"></span><i class="wx-sep"></i><span class="wx"></span></div><span class="ctl-left" id="ctlLeft"></span></div>
   </div>
   <div class="ctl-time"><span id="ctlT0"></span><div class="bar ctl-bar"><i id="ctlBar"></i></div><span id="ctlT1"></span></div>
   <div class="ctl-btns" id="ctlBtns"></div>
@@ -660,7 +674,7 @@ body.mob #ctl{display:none!important}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '3.0.1'; // меняется с каждой новой версией
+const BUILD = '3.1.1'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
@@ -1194,7 +1208,7 @@ function fail(idx, gen) {
   if (S.failStreak >= 6) { toast('Подряд не открылись 6 каналов. Проверьте интернет или ссылку на плейлист в настройках.', 9000); return; }
   const http = !APP && location.protocol === 'https:' && /^http:/i.test(ch.url);
   toast(`«${ch.name}» сейчас не показывает${http ? ': канал идёт по http, а браузер блокирует такие потоки на защищённом сайте' : ''}. Включаю следующий.${S.lastErr ? ' [' + S.lastErr + ']' : ''}`, 6000);
-  S.failT = setTimeout(() => { if (S.cur === idx) { play((idx + 1) % S.channels.length, true); if (S.mode === 'watch') showOSD(); } }, 2500);
+  S.failT = setTimeout(() => { if (S.cur === idx) { const L = zapList(); play(L[(Math.max(0, L.indexOf(idx)) + 1) % L.length], true); if (S.mode === 'watch') showOSD(); } }, 2500);
 }
 /* Размер картинки: авто подгоняет старые каналы 4:3 под весь экран; вручную можно выбрать режим, он запоминается для канала */
 const AR_MODES = [
@@ -1293,14 +1307,23 @@ function audioName(a, i) {
   return [a.label || l || `Дорожка ${i + 1}`, a.ch > 2 ? `${a.ch} кан.` : '', codec].filter(Boolean).join(', ');
 }
 
+/* Переключение идёт внутри текущей группы: смотришь Грузию — листаешь Грузию.
+   Если канал открыт из «Избранного» или «Всех каналов», листается именно этот список. */
+function zapList() {
+  if (S.zapItems && S.zapItems.includes(S.cur)) return S.zapItems;
+  const g = S.groups.find(x => x.items.includes(S.cur));
+  return g && g.items.length > 1 ? g.items : S.channels.map((c, i) => i);
+}
 function zap(d) {
   const n = S.channels.length; if (!n) return;
+  const list = zapList();
   const base = S.pend != null ? S.pend : Math.max(0, S.cur);
-  S.pend = (base + d + n) % n; showOSD();
+  const pos = Math.max(0, list.indexOf(base));
+  S.pend = list[(pos + d + list.length) % list.length]; showOSD();
   clearTimeout(S.zt);
   S.zt = setTimeout(() => { const i = S.pend; S.pend = null; play(i); }, 450);
 }
-function playAndWatch(i) { if (i == null) return; S.pend = null; if (i !== S.cur || !S.playing) play(i); setMode('watch'); showOSD(); }
+function playAndWatch(i, items) { if (i == null) return; S.zapItems = items && items.includes(i) ? items : null; S.pend = null; if (i !== S.cur || !S.playing) play(i); setMode('watch'); showOSD(); }
 
 /* ---------- Плашка канала ---------- */
 function updateOSD() {
@@ -1407,7 +1430,7 @@ function mkCard(ci, i, r) {
   c.className = 'card' + (isFav(ci) ? ' fav' : ''); c.dataset.i = i; c.style.left = (i * STEP) + 'rem';
   c.innerHTML = `${logoBox(ch, 'card-art')}<span class="num">${ch.num}</span><div class="card-body"><b>${esc(ch.name)}</b><span class="card-now"></span><div class="bar"><i></i></div></div>`;
   fillNow(c, ch);
-  c.onclick = () => { S.hf.row = r + 1; S.rowCol[r] = i; playAndWatch(ci); };
+  c.onclick = () => { S.hf.row = r + 1; S.rowCol[r] = i; const rw = S.rows[r]; playAndWatch(ci, rw && (rw.title === 'Избранное' || !rw.special) ? rw.items : null); };
   return c;
 }
 function fillNow(c, ch) {
@@ -1446,7 +1469,7 @@ function homeKey(k) {
   else if (k === 'left') { if (h.row === 0) h.tb = Math.max(0, h.tb - 1); else { const r = h.row - 1; S.rowCol[r] = Math.max(0, S.rowCol[r] - 1); } }
   else if (k === 'right') { if (h.row === 0) h.tb = Math.min(TB.length - 1, h.tb + 1); else { const r = h.row - 1; S.rowCol[r] = Math.min(S.rows[r].items.length - 1, S.rowCol[r] + 1); } }
   else if (k === 'chup' || k === 'chdown') { if (h.row > 0) { const r = h.row - 1; S.rowCol[r] = Math.max(0, Math.min(S.rows[r].items.length - 1, S.rowCol[r] + (k === 'chup' ? 6 : -6))); } }
-  else if (k === 'ok') { if (h.row === 0) TB[h.tb].act(); else playAndWatch(S.rows[h.row - 1].items[S.rowCol[h.row - 1]]); return; }
+  else if (k === 'ok') { if (h.row === 0) TB[h.tb].act(); else { const rw = S.rows[h.row - 1]; playAndWatch(rw.items[S.rowCol[h.row - 1]], rw.title === 'Избранное' || !rw.special ? rw.items : null); } return; }
   else if (k === 'back') { if (S.cur >= 0) { setMode('watch'); showOSD(); } return; }
   else if (k === 'menu') { openSettings(); return; }
   renderHome();
@@ -1495,7 +1518,7 @@ function listKey(k) {
     else if (k === 'chdown') L.c = Math.min(n - 1, L.c + 10);
     else if (k === 'left') { if (gs.length > 1) L.col = 'groups'; }
     else if (k === 'right') { toggleFav(gs[L.g].items[L.c]); }
-    else if (k === 'ok') { playAndWatch(gs[L.g].items[L.c]); return; }
+    else if (k === 'ok') { playAndWatch(gs[L.g].items[L.c], gs[L.g].title === 'Все каналы' ? null : gs[L.g].items); return; }
   }
   renderList();
 }
@@ -1545,12 +1568,13 @@ function renderCtl() {
   S.cb = ctlButtons(); S.cf = Math.min(S.cf, S.cb.length - 1);
   const nn = nowNext(ch), arch = S.archive && S.archive.prog, p = arch || nn.now, now = Date.now();
   $('#ctlLogo').innerHTML = logoBox(ch, 'osd-logo');
-  $('#ctlCh').textContent = `${ch.num}  ${ch.name}${arch ? '  •  Архив' : ''}`;
+  const zl = S.zapItems && S.zapItems.includes(S.cur) ? (S.zapItems.length === favList().length && S.zapItems.every(i => isFav(i)) ? 'Избранное' : '') : '';
+  $('#ctlCh').innerHTML = `${ch.num}  ${esc(ch.name)}<span class="ctl-grp">${esc(zl || ch.group)}</span>${arch ? '<span class="ctl-grp">Архив</span>' : ''}`;
   $('#ctlProg').textContent = p ? p.t : (S.epgLoading ? 'Телепрограмма загружается' : 'Прямой эфир');
   $('#ctlNext').textContent = !arch && nn.next ? `Далее в ${tm(nn.next.s)}: ${nn.next.t}` : (arch ? `${tm(arch.s)}–${tm(arch.e)}` : '');
   $('#ctlT0').textContent = p ? tm(p.s) : ''; $('#ctlT1').textContent = p ? tm(p.e) : '';
   $('#ctlBar').style.width = p && !arch ? pct(p) + '%' : '0';
-  $('#ctlLeft').textContent = p && !arch && p.e > now ? `осталось ${hm(p.e - now)}` : '';
+  S.ctlEnd = p && !arch && p.e > now ? p.e : 0; tickLeft();
   $('#ctlBtns').innerHTML = S.cb.map((b, i) => `<div class="cb${b.ic ? ' ic' : ''}${b.on ? ' on' : ''}${!S.ctlPassive && i === S.cf ? ' sel' : ''}" data-i="${i}">${b.icon}${b.t ? `<span>${esc(b.t)}</span>` : ''}</div>`).join('');
   S.vchips = []; S.crow = 0;
   S.vf = Math.min(S.vf || 0, Math.max(0, S.vchips.length - 1));
@@ -1564,6 +1588,15 @@ function renderCtl() {
   renderWeather();
   renderPop();
 }
+/* Обратный отсчёт до конца передачи: −29:14, обновляется каждую секунду */
+function tickLeft() {
+  const el = $('#ctlLeft'); if (!el) return;
+  const ms = S.ctlEnd ? S.ctlEnd - Date.now() : 0;
+  if (ms <= 0) { el.textContent = ''; return; }
+  const t = Math.floor(ms / 1000), h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), sec = t % 60, p2 = n => String(n).padStart(2, '0');
+  el.textContent = '−' + (h ? `${h}:${p2(m)}:${p2(sec)}` : `${m}:${p2(sec)}`);
+}
+setInterval(() => { if (!$('#ctl').classList.contains('hidden')) tickLeft(); }, 1000);
 function openPop(items) {
   const el = $('#ctlBtns').children[S.cf];
   S.pop = { items, i: Math.max(0, items.findIndex(c => c.on)) };
@@ -1658,20 +1691,38 @@ function wxIcon(code, day) {
   const CL = 'M18 46h28a11 11 0 0 0 1-22 14 14 0 0 0-27-2 10 10 0 0 0-2 24z';
   const sun = (x, y, r) => `<g transform="translate(${x - 32} ${y - 32})"><g class="rays" stroke="#FFC94A" stroke-width="3" stroke-linecap="round">${[0, 45, 90, 135, 180, 225, 270, 315].map(a => `<line x1="32" y1="${32 - r - 5}" x2="32" y2="${32 - r - 10}" transform="rotate(${a} 32 32)"/>`).join('')}</g><circle class="glow" cx="32" cy="32" r="${r + 4}" fill="#FFC94A" opacity=".3"/><circle cx="32" cy="32" r="${r}" fill="#FFD25E"/></g>`;
   const moon = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M10-12a14 14 0 1 0 12 18A11 11 0 0 1 10-12z" fill="#E8EDF8"/></g>`;
-  const stars = '<circle class="star" cx="50" cy="12" r="1.6" fill="#fff"/><circle class="star d2" cx="56" cy="24" r="1.2" fill="#fff"/><circle class="star" cx="12" cy="10" r="1.2" fill="#fff"/>';
+  const stars = '<circle class="star" cx="52" cy="12" r="1.6" fill="#fff"/><circle class="star d2" cx="58" cy="24" r="1.2" fill="#fff"/><circle class="star" cx="10" cy="10" r="1.2" fill="#fff"/>';
   const cloud = (fill, cls = 'cl') => `<path class="${cls}" d="${CL}" fill="${fill}"/>`;
-  const sky = day ? sun(22, 22, 9) : moon(14, 22, .8);
+  const back = (fill) => `<path class="cl2" d="${CL}" fill="${fill}" transform="translate(-8 -8) scale(.85)"/>`;
+  const peek = day ? sun(22, 22, 9) : moon(14, 22, .8) + stars;
+  const xs = n => n === 2 ? [26, 38] : n === 3 ? [22, 32, 42] : n === 4 ? [19, 28, 37, 46] : [17, 24, 31, 38, 45];
+  const drops = (n, heavy) => `<g stroke="#6FB4FF" stroke-width="${heavy ? 3 : 2.4}" stroke-linecap="round">${xs(n).map((x, i) => `<line class="dr${heavy ? ' fast' : ''}" style="animation-delay:${(i * .23).toFixed(2)}s" x1="${x}" y1="49" x2="${x - (heavy ? 3 : 2)}" y2="${heavy ? 58 : 55}"/>`).join('')}</g>`;
+  const dots = n => `<g fill="#8EC5FF">${xs(n).map((x, i) => `<circle class="dr" style="animation-delay:${(i * .3).toFixed(2)}s" cx="${x}" cy="51" r="1.5"/>`).join('')}</g>`;
+  const flakes = n => `<g fill="#fff">${xs(n).map((x, i) => `<circle class="sn" style="animation-delay:${(i * .5).toFixed(2)}s" cx="${x}" cy="52" r="2.3"/>`).join('')}</g>`;
+  const hail = '<g fill="#E6F2FF"><rect class="dr" x="22" y="50" width="3.4" height="3.4" rx=".8"/><rect class="dr" style="animation-delay:.4s" x="36" y="50" width="3.4" height="3.4" rx=".8"/></g>';
+  const bolt = '<polygon class="bolt" points="34,40 26,52 32,52 28,62 40,48 34,48 38,40" fill="#FFC94A"/>';
   let svg;
   if (code === 0) svg = day ? sun(32, 32, 12) : moon(26, 32, 1.15) + stars;
-  else if (code <= 2) svg = sky + (day ? '' : stars) + cloud('#E3E9F4');
-  else if (code === 3) svg = `<path class="cl2" d="${CL}" fill="#9AA6BA" transform="translate(-8 -8) scale(.85)"/>` + cloud('#D5DCE8');
+  else if (code === 1) svg = (day ? sun(28, 28, 11) : moon(24, 30, 1.05) + stars) + `<path class="cl" d="${CL}" fill="#E8EDF6" transform="translate(22 22) scale(.55)"/>`;
+  else if (code === 2) svg = peek + cloud('#E3E9F4');
+  else if (code === 3) svg = back('#8C97AB') + cloud('#C3CBD8');
   else if (code === 45 || code === 48) svg = cloud('#C9D1DE') + '<g stroke="#C9D1DE" stroke-width="3" stroke-linecap="round"><line class="fg" x1="12" y1="52" x2="44" y2="52"/><line class="fg d2" x1="20" y1="58" x2="52" y2="58"/></g>';
-  else if ((code >= 71 && code <= 77) || code === 85 || code === 86) svg = cloud('#DCE3EE') + '<g fill="#fff"><circle class="sn" cx="22" cy="52" r="2.2"/><circle class="sn d2" cx="32" cy="54" r="2.2"/><circle class="sn d3" cx="42" cy="52" r="2.2"/></g>';
-  else if (code >= 95) svg = cloud('#7F8BA0') + '<polygon class="bolt" points="34,40 26,52 32,52 28,62 40,48 34,48 38,40" fill="#FFC94A"/>';
-  else svg = (code >= 80 && day ? sun(18, 18, 7) : '') + cloud('#B9C3D3') + '<g stroke="#6FB4FF" stroke-width="2.6" stroke-linecap="round"><line class="dr" x1="22" y1="50" x2="20" y2="56"/><line class="dr d2" x1="32" y1="50" x2="30" y2="56"/><line class="dr d3" x1="42" y1="50" x2="40" y2="56"/></g>';
+  else if (code >= 51 && code <= 57) svg = cloud('#C7D0DE') + dots(code === 51 ? 3 : 5) + (code >= 56 ? flakes(2) : '');
+  else if (code >= 61 && code <= 67) svg = (code === 65 ? back('#7F8BA0') + cloud('#9AA6BA') : cloud('#B9C3D3')) + drops(code === 61 ? 2 : code === 63 ? 3 : 5, code === 65 || code === 67) + (code >= 66 ? flakes(2) : '');
+  else if (code >= 71 && code <= 77) svg = cloud('#DCE3EE') + (code === 77 ? hail : flakes(code === 71 ? 2 : code === 73 ? 3 : 5));
+  else if (code >= 80 && code <= 82) svg = (code < 82 ? peek : back('#7F8BA0')) + cloud(code === 82 ? '#9AA6BA' : '#C3CBD8') + drops(code === 80 ? 2 : code === 81 ? 4 : 5, code >= 81);
+  else if (code === 85 || code === 86) svg = peek + cloud('#DCE3EE') + flakes(code === 85 ? 3 : 5);
+  else if (code >= 95) svg = back('#5E6A80') + cloud('#7F8BA0') + bolt + (code >= 96 ? hail : drops(2, true));
+  else svg = cloud('#B9C3D3') + drops(3);
   return `<svg viewBox="0 0 64 64">${svg}</svg>`;
 }
-const WX_TEXT = c => c === 0 ? 'Ясно' : c <= 2 ? 'Переменная облачность' : c === 3 ? 'Облачно' : (c === 45 || c === 48) ? 'Туман' : ((c >= 71 && c <= 77) || c === 85 || c === 86) ? 'Снег' : c >= 95 ? 'Гроза' : 'Дождь';
+const WX_NAMES = { 0: 'Ясно', 1: 'Преимущественно ясно', 2: 'Переменная облачность', 3: 'Пасмурно', 45: 'Туман', 48: 'Туман с изморозью',
+  51: 'Лёгкая морось', 53: 'Морось', 55: 'Сильная морось', 56: 'Ледяная морось', 57: 'Ледяная морось',
+  61: 'Небольшой дождь', 63: 'Дождь', 65: 'Сильный дождь', 66: 'Ледяной дождь', 67: 'Сильный ледяной дождь',
+  71: 'Небольшой снег', 73: 'Снег', 75: 'Сильный снег', 77: 'Снежная крупа',
+  80: 'Кратковременный дождь', 81: 'Ливень', 82: 'Сильный ливень', 85: 'Снегопад', 86: 'Сильный снегопад',
+  95: 'Гроза', 96: 'Гроза с градом', 99: 'Сильная гроза с градом' };
+const WX_TEXT = c => WX_NAMES[c] || 'Облачно';
 async function loadWeather() {
   try {
     let loc = store.get('wxloc', null);
@@ -1691,7 +1742,7 @@ function renderWeather() {
   const key = `${S.wx.code}|${S.wx.day}|${S.wx.t}`;
   document.querySelectorAll('.wx').forEach(el => {
     if (el.dataset.k === key) return; el.dataset.k = key;
-    el.innerHTML = wxIcon(S.wx.code, S.wx.day) + `<span>${S.wx.t}°</span>`;
+    el.innerHTML = wxIcon(S.wx.code, S.wx.day) + `<span class="wx-t"><b>${S.wx.t}°</b><small>${esc(WX_TEXT(S.wx.code))}</small></span>`;
     el.title = `${WX_TEXT(S.wx.code)}${S.wx.city ? ', ' + S.wx.city : ''}`;
   });
 }
@@ -2530,7 +2581,7 @@ document.querySelectorAll('.m-tabs button').forEach(b => b.onclick = () => {
 });
 $('#mGroups').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.mg = b.dataset.g; store.set('mg', S.mg); S.mlim = 120; renderMob(true); });
 $('#mSearch').addEventListener('input', () => { S.mq = $('#mSearch').value; S.mlim = 120; renderMob(false); $('#mGroups').style.display = S.mq ? 'none' : ''; });
-$('#mList').addEventListener('click', e => { const it = e.target.closest('.li'); if (!it) return; const ci = +it.dataset.ci; play(ci); renderMob(false); });
+$('#mList').addEventListener('click', e => { const it = e.target.closest('.li'); if (!it) return; const ci = +it.dataset.ci; S.zapItems = S.mitems && S.mitems.length > 1 && !S.mq ? S.mitems.slice() : null; play(ci); renderMob(false); });
 $('#mList').addEventListener('scroll', () => {
   const l = $('#mList');
   if (l.scrollTop + l.clientHeight > l.scrollHeight - 400 && S.mitems && S.mlim < S.mitems.length) {
