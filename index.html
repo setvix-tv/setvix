@@ -261,7 +261,7 @@ body.m-list #shade{opacity:1;background:linear-gradient(90deg,rgba(12,20,36,.96)
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '2026-10-10-5'; // меняется с каждой новой версией
+const BUILD = '2026-10-10-6'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 
@@ -586,7 +586,7 @@ function setMode(m) {
   $('#list').classList.toggle('hidden', m !== 'list');
   $('#settings').classList.toggle('hidden', m !== 'settings');
   $('#pair').classList.toggle('hidden', m !== 'pair');
-  if (m !== 'pair' && S.pairT) stopPair();
+  if (m !== 'pair' && S.pair) stopPair();
   if (m !== 'watch') hideOSD();
 }
 
@@ -815,30 +815,44 @@ async function openPair() {
   if (await loadQrLib() && window.qrcode && S.pair && S.pair.code === code) {
     try { const q = qrcode(0, 'M'); q.addData(SITE + '?link=' + code); q.make(); $('#pairQr').innerHTML = q.createSvgTag(4, 0); } catch (e) {}
   }
-  S.pairT = setInterval(pollPair, 3000);
+  const P = S.pair; if (!P || P.code !== code) return;
+  S.pairT = setTimeout(() => { if (S.pair === P) openPair(); }, 10 * 60 * 1000);
+  listenPair(P);
 }
-function stopPair() { clearInterval(S.pairT); S.pairT = null; S.pair = null; }
-async function pollPair() {
-  const P = S.pair; if (!P) return;
-  if (Date.now() > P.until) { openPair(); return; }
-  try {
-    const r = await fetch(`${PAIR_HUB}${P.code}/json?poll=1&since=${P.since}`, { cache: 'no-store' });
-    if (!r.ok) return;
-    const lines = (await r.text()).split('\n').filter(Boolean);
-    for (const line of lines) {
-      let ev; try { ev = JSON.parse(line); } catch (e) { continue; }
-      if (ev.event !== 'message' || !ev.message) continue;
-      let data; try { data = JSON.parse(ev.message); } catch (e) { continue; }
-      if (!data || !/^https?:\/\//i.test(data.m3u || '')) continue;
-      if (!S.pair || S.pair.code !== P.code) return;
-      stopPair();
-      $('#pairWait').textContent = 'Телефон подключён. Загружаю каналы…';
-      const ok = await applyPlaylist(data.m3u, /^https?:\/\//i.test(data.epg || '') ? data.epg : '',
-        (msg, err) => { $('#pairWait').textContent = msg; if (err) toast(msg, 6000); });
-      if (!ok) setTimeout(() => openSettings(), 2500);
-      return;
-    }
-  } catch (e) {}
+function stopPair() { clearTimeout(S.pairT); S.pairT = null; if (S.pair && S.pair.ac) { try { S.pair.ac.abort(); } catch (e) {} } S.pair = null; }
+/* Одно долгое соединение вместо частых запросов: сервер подключения не любит, когда его опрашивают каждые 3 секунды */
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+async function listenPair(P) {
+  if (!P) return;
+  while (S.pair === P) {
+    try {
+      const ac = new AbortController(); P.ac = ac;
+      const r = await fetch(`${PAIR_HUB}${P.code}/json?since=${P.since}`, { signal: ac.signal, cache: 'no-store' });
+      if (!r.ok || !r.body) { await sleep(r.status === 429 ? 30000 : 10000); continue; }
+      const rd = r.body.getReader(); const dec = new TextDecoder(); let buf = '';
+      while (S.pair === P) {
+        const { done, value } = await rd.read(); if (done) break;
+        buf += dec.decode(value, { stream: true }); let i;
+        while ((i = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, i); buf = buf.slice(i + 1);
+          if (await handlePairLine(line, P)) return;
+        }
+      }
+    } catch (e) { if (S.pair !== P) return; await sleep(10000); }
+  }
+}
+async function handlePairLine(line, P) {
+  let ev; try { ev = JSON.parse(line); } catch (e) { return false; }
+  if (ev.event !== 'message' || !ev.message) return false;
+  let data; try { data = JSON.parse(ev.message); } catch (e) { return false; }
+  if (!data || !/^https?:\/\//i.test(data.m3u || '')) return false;
+  if (S.pair !== P) return true;
+  stopPair();
+  $('#pairWait').textContent = 'Телефон подключён. Загружаю каналы…';
+  const ok = await applyPlaylist(data.m3u, /^https?:\/\//i.test(data.epg || '') ? data.epg : '',
+    (msg, err) => { $('#pairWait').textContent = msg; if (err) toast(msg, 6000); });
+  if (!ok) setTimeout(() => openSettings(), 2500);
+  return true;
 }
 function pairKey(k) { if (k === 'back') { stopPair(); openSettings(); } }
 $('#btnPair').onclick = () => openPair();
@@ -859,6 +873,7 @@ $('#lnSend').onclick = async () => {
   lnStatus('Отправляю…');
   try {
     const r = await fetch(PAIR_HUB + code, { method: 'POST', body: JSON.stringify({ m3u: m, epg: e }) });
+    if (r.status === 429) throw new Error('сервер подключения просит подождать минуту');
     if (!r.ok) throw new Error('сервер ответил ' + r.status);
     store.set('m3u', m); store.set('epg', e);
     lnStatus('Отправлено. Через несколько секунд каналы появятся на телевизоре.');
