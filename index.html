@@ -76,7 +76,7 @@ body.m-list #shade{opacity:1;background:linear-gradient(90deg,rgba(12,20,36,.96)
 .card{position:absolute;top:.3rem;width:17rem;transition:transform .2s,opacity .2s;transform-origin:center 30%;opacity:.8}
 .row.active .card{opacity:1}
 .card-art{position:relative;height:9.6rem;border-radius:.9rem;overflow:hidden;display:grid;place-items:center;transition:box-shadow .2s;
-  background:linear-gradient(140deg,hsl(var(--h) 42% 27%),hsl(calc(var(--h) + 40) 48% 13%))}
+  background:rgba(237,240,246,.05)}
 .card-art img{max-width:62%;max-height:58%;object-fit:contain;filter:drop-shadow(0 .3rem .8rem rgba(0,0,0,.4))}
 .card-art em,.llogo em,.osd-logo em{display:none;font-family:var(--serif);font-weight:650;font-style:normal;color:rgba(237,240,246,.92)}
 .card-art em{font-size:3rem}
@@ -105,7 +105,7 @@ body.m-list #shade{opacity:1;background:linear-gradient(90deg,rgba(12,20,36,.96)
 .lcol.on .li.sel .bar{background:rgba(26,20,5,.2)}
 .lcol.on .li.sel .bar i{background:var(--ink)}
 .lnum{width:2.6rem;flex:none;text-align:right;font-weight:700;color:var(--muted);font-variant-numeric:tabular-nums}
-.llogo{width:4.6rem;height:2.9rem;flex:none;border-radius:.5rem;display:grid;place-items:center;overflow:hidden;background:linear-gradient(140deg,hsl(var(--h) 42% 27%),hsl(calc(var(--h) + 40) 48% 13%))}
+.llogo{width:4.6rem;height:2.9rem;flex:none;border-radius:.5rem;display:grid;place-items:center;overflow:hidden;background:transparent}
 .llogo img{max-width:80%;max-height:75%;object-fit:contain}
 .llogo em{font-size:1.2rem}
 .ltext{min-width:0;flex:1}
@@ -119,7 +119,7 @@ body.m-list #shade{opacity:1;background:linear-gradient(90deg,rgba(12,20,36,.96)
 #osd{position:fixed;z-index:5;left:4rem;right:4rem;bottom:3rem;display:flex;align-items:center;gap:2rem;padding:1.6rem 2rem;border-radius:1.4rem;
   background:var(--panel);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);transition:opacity .3s,transform .3s,visibility .3s}
 #osd.hidden{transform:translateY(1.5rem)}
-.osd-logo{width:9rem;height:5.6rem;flex:none;border-radius:.8rem;display:grid;place-items:center;overflow:hidden;background:linear-gradient(140deg,hsl(var(--h) 42% 27%),hsl(calc(var(--h) + 40) 48% 13%))}
+.osd-logo{width:9rem;height:5.6rem;flex:none;border-radius:.8rem;display:grid;place-items:center;overflow:hidden;background:transparent}
 .osd-logo img{max-width:75%;max-height:70%;object-fit:contain}
 .osd-logo em{font-size:2.2rem}
 .osd-main{flex:1;min-width:0}
@@ -278,7 +278,7 @@ body.mob .sheet{width:94vw;padding:1.4rem 1.2rem;max-height:92vh;overflow-y:auto
 body.mob #settings,body.mob #upd,body.mob #gsel{z-index:10}
 
 /* ---------- Панель управления (OK во время просмотра) ---------- */
-#ctl{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:5rem 4rem 2.6rem;
+#ctl{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:4rem 4rem 2rem;
   background:linear-gradient(0deg,rgba(8,13,24,.96) 0%,rgba(8,13,24,.85) 55%,rgba(8,13,24,0) 100%);
   transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1),visibility .35s}
 #ctl.hidden{opacity:0;visibility:hidden;transform:translateY(2.5rem);pointer-events:none}
@@ -286,12 +286,12 @@ body.mob #settings,body.mob #upd,body.mob #gsel{z-index:10}
 .ctl-logo .osd-logo{width:8rem;height:5rem}
 .ctl-t{flex:1;min-width:0}
 .ctl-ch{display:block;color:var(--muted);font-weight:700;font-size:1.05rem;letter-spacing:.01em}
-.ctl-prog{display:block;font-family:var(--serif);font-weight:650;font-size:2.4rem;letter-spacing:-.02em;line-height:1.15;margin:.2rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl-prog{display:block;font-family:var(--serif);font-weight:650;font-size:1.9rem;letter-spacing:-.02em;line-height:1.15;margin:.2rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ctl-next{display:block;color:var(--muted);font-size:1.05rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ctl-r{text-align:right;display:flex;flex-direction:column;gap:.3rem;align-items:flex-end}
 .ctl-r .clock{font-size:1.8rem;color:var(--text);margin:0}
 .ctl-left{color:var(--amber);font-weight:700;font-variant-numeric:tabular-nums}
-.ctl-time{display:flex;align-items:center;gap:1.2rem;margin:1.4rem 0 1.4rem;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
+.ctl-time{display:flex;align-items:center;gap:1.2rem;margin:1rem 0 1.1rem;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
 .ctl-bar{flex:1;height:.35rem}
 .ctl-btns{display:flex;gap:1rem;align-items:center}
 .cb{display:flex;align-items:center;gap:.7rem;height:3.6rem;padding:0 1.2rem;border-radius:1.8rem;background:rgba(237,240,246,.09);color:var(--text);font-weight:700;font-size:1.02rem;
@@ -309,6 +309,13 @@ body.mob #settings,body.mob #upd,body.mob #gsel{z-index:10}
 .vc.on{color:var(--amber);background:rgba(242,181,68,.14)}
 .vc.dim{opacity:.5}
 .vc.sel{background:var(--text);color:var(--night);transform:scale(1.08)}
+.ctl-pop{position:absolute;bottom:6.4rem;min-width:13rem;background:rgba(21,33,58,.98);border:1px solid var(--line);border-radius:1rem;padding:.5rem;box-shadow:0 1.2rem 3rem rgba(0,0,0,.5);
+  transition:opacity .2s,transform .25s cubic-bezier(.2,.8,.2,1)}
+.ctl-pop.hidden{opacity:0;transform:translateY(.8rem);pointer-events:none}
+.ctl-pop .pi{padding:.7rem 1rem;border-radius:.7rem;font-weight:700;font-size:1.05rem;color:var(--muted);display:flex;justify-content:space-between;gap:1rem}
+.ctl-pop .pi.on{color:var(--amber)}
+.ctl-pop .pi.dim{opacity:.55}
+.ctl-pop .pi.sel{background:var(--text);color:var(--night)}
 .ctl-hint{color:var(--muted);font-size:.95rem;font-weight:600;margin-top:1.1rem}
 
 /* ---------- Программа рядом с видео ---------- */
@@ -360,6 +367,10 @@ body.native #pgVid{background:transparent;outline:.15rem solid rgba(237,240,246,
 
 .m-vars{margin:.3rem 0 .8rem}
 .m-vars .vl{width:100%;margin:.6rem 0 0}
+
+/* Логотипы прозрачные; цветная плашка только у каналов без логотипа */
+.card-art.nologo,.llogo.nologo,.osd-logo.nologo{background:linear-gradient(140deg,hsl(var(--h) 30% 24%),hsl(calc(var(--h) + 40) 35% 14%))}
+.card-art img,.llogo img,.osd-logo img{filter:drop-shadow(0 .2rem .6rem rgba(0,0,0,.45))}
 
 /* Сообщения */
 #toast{position:fixed;z-index:7;top:2.4rem;left:50%;transform:translate(-50%,-1rem);max-width:62rem;background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
@@ -490,6 +501,7 @@ body.native #pgVid{background:transparent;outline:.15rem solid rgba(237,240,246,
   <div class="ctl-time"><span id="ctlT0"></span><div class="bar ctl-bar"><i id="ctlBar"></i></div><span id="ctlT1"></span></div>
   <div class="ctl-btns" id="ctlBtns"></div>
   <div class="ctl-vars" id="ctlVars"></div>
+  <div class="ctl-pop hidden" id="ctlPop"></div>
   <p class="ctl-hint" id="ctlHint"></p>
 </section>
 
@@ -561,7 +573,7 @@ body.native #pgVid{background:transparent;outline:.15rem solid rgba(237,240,246,
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '2026-10-11-8'; // меняется с каждой новой версией
+const BUILD = '2026-10-11-9'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
@@ -846,8 +858,8 @@ async function loadEPG(url) {
     async pull(c) { const x = await rd.read(); if (x.done) c.close(); else c.enqueue(x.value); }
   });
   if (!first.done && first.value[0] === 0x1f && first.value[1] === 0x8b) {
-    if (typeof DecompressionStream === 'undefined') throw new Error('браузер не умеет распаковывать .gz');
-    src = src.pipeThrough(new DecompressionStream('gzip'));
+    if (typeof DecompressionStream !== 'undefined') src = src.pipeThrough(new DecompressionStream('gzip'));
+    else src = await pakoStream(src); // старые приставки: распаковка своими силами
   }
   const reader = src.getReader(); const dec = new TextDecoder(); let buf = '', n = 0;
   for (;;) {
@@ -864,6 +876,22 @@ async function loadEPG(url) {
     if (!c.logo && c.epgId && icons.has(c.epgId)) c.logo = icons.get(c.epgId);
   });
   if (S.mode === 'home') { $('#rowsTrack').innerHTML = ''; renderHome(); }
+}
+async function pakoStream(src) {
+  if (!window.pako) await new Promise((res, rej) => { const sc = document.createElement('script'); sc.src = 'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako_inflate.min.js'; sc.onload = res; sc.onerror = () => rej(new Error('не загрузился распаковщик')); document.head.appendChild(sc); });
+  const rd = src.getReader(), inf = new pako.Inflate({ windowBits: 47 }), q = []; let ended = false;
+  inf.onData = ch => q.push(ch);
+  return new ReadableStream({
+    async pull(c) {
+      for (;;) {
+        if (q.length) { c.enqueue(q.shift()); return; }
+        if (ended) { c.close(); return; }
+        const { done, value } = await rd.read();
+        if (done) { inf.push(new Uint8Array(0), true); ended = true; } else inf.push(value, false);
+        if (inf.err) throw new Error(inf.msg || 'ошибка распаковки');
+      }
+    }
+  });
 }
 /* Телепрограмма по умолчанию, если её нет ни в настройках, ни в плейлисте */
 const DEFAULT_EPG = 'http://epg.one/epg2.xml.gz';
@@ -907,11 +935,12 @@ async function startEPG(url, force) {
     S.epgLoading = false;
     const n = S.channels.filter(c => c.epgId).length;
     S.epgStat = `${n} из ${S.channels.length} каналов с программой (${url})`;
+    toast(n ? `Телепрограмма загружена: ${n} каналов` : 'Телепрограмма скачалась, но названия каналов не совпали', 4000);
     saveEpgCache(url);
     refreshNow();
   }).catch(err => {
     S.epgLoading = false; S.epgStat = 'ошибка: ' + (err && err.message || err) + ' (' + url + ')'; refreshNow();
-    toast('Телепрограмма не загрузилась. Каналы работают и без неё.');
+    toast('Телепрограмма не загрузилась: ' + (err && err.message || err), 7000);
   });
 }
 function nowNext(ch) {
@@ -1197,7 +1226,7 @@ function setMode(m) {
   if (typeof updateVideoRect === 'function') setTimeout(updateVideoRect, m === 'prog' ? 60 : 0);
   if (m !== 'pair' && S.pair) stopPair();
   if (m !== 'watch') hideOSD();
-  if (m !== 'ctl') clearTimeout(S.ctlT);
+  if (m !== 'ctl') { clearTimeout(S.ctlT); if (S.pop) { S.pop = null; $('#ctlPop').classList.add('hidden'); } }
 }
 
 /* ---------- Главная ---------- */
@@ -1356,6 +1385,7 @@ const IC = {
   aspect: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9V8h2M17 15v1h-2"/></svg>',
   hd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M7 12h3M10 9v6M14 9v6h1.5a2.5 2.5 0 0 0 0-5H14"/></svg>',
   live: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>',
+  clock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>'
 };
 const hm = ms => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} ч${m % 60 ? ' ' + (m % 60) + ' мин' : ''}` : `${m} мин`; };
@@ -1370,12 +1400,16 @@ function ctlButtons() {
   b.push({ id: 'fav', icon: IC.star, ic: true, on: isFav(S.cur), act: () => { toggleFav(S.cur); renderCtl(); } });
   if (S.audio.length > 1) b.push({ id: 'aud', icon: IC.audio, t: 'Звук', act: () => { const o = optItems().find(x => x.t === 'Звук'); if (o) o.act(); setMode('ctl'); renderCtl(); } });
   b.push({ id: 'ar', icon: IC.aspect, ic: true, act: () => { cycleAspect(); renderCtl(); } });
+  const vc = varChips(ch);
+  const vq = vc.filter(c => c.k === 'q' || c.k === 'o'), vz = vc.filter(c => c.k === 'z');
+  if (vq.length) { const on = vq.find(c => c.k === 'q' && c.on); b.push({ id: 'q', icon: IC.hd, t: on ? on.t : 'Качество', act: () => openPop(vq) }); }
+  if (vz.length) { const on = vz.find(c => c.on); b.push({ id: 'z', icon: IC.clock, t: on ? on.t : 'Пояс', act: () => openPop(vz) }); }
   if (S.archive) b.push({ id: 'live', icon: IC.live, t: 'В эфир', act: () => { play(S.cur); setMode('watch'); showOSD(); } });
   b.push({ id: 'more', icon: IC.more, ic: true, act: () => openOpts() });
   return b;
 }
 function openCtl() { if (S.cur < 0) return; hideOSD(); S.cf = S.cf || 0; S.crow = 0; setMode('ctl'); renderCtl(); bumpCtl(); }
-function bumpCtl() { clearTimeout(S.ctlT); S.ctlT = setTimeout(() => { if (S.mode === 'ctl') setMode('watch'); }, 9000); }
+function bumpCtl() { clearTimeout(S.ctlT); S.ctlT = setTimeout(() => { if (S.mode === 'ctl') { S.pop = null; renderPop(); setMode('watch'); } }, 9000); }
 function renderCtl() {
   const ch = S.channels[S.cur]; if (!ch) return;
   S.cb = ctlButtons(); S.cf = Math.min(S.cf, S.cb.length - 1);
@@ -1388,34 +1422,46 @@ function renderCtl() {
   $('#ctlBar').style.width = p && !arch ? pct(p) + '%' : '0';
   $('#ctlLeft').textContent = p && !arch && p.e > now ? `осталось ${hm(p.e - now)}` : '';
   $('#ctlBtns').innerHTML = S.cb.map((b, i) => `<div class="cb${b.ic ? ' ic' : ''}${b.on ? ' on' : ''}${S.crow === 0 && i === S.cf ? ' sel' : ''}" data-i="${i}">${b.icon}${b.t ? `<span>${esc(b.t)}</span>` : ''}</div>`).join('');
-  S.vchips = varChips(ch); if (!S.vchips.length) S.crow = 0;
+  S.vchips = []; S.crow = 0;
   S.vf = Math.min(S.vf || 0, Math.max(0, S.vchips.length - 1));
   let last = '';
   $('#ctlVars').innerHTML = S.vchips.map((c, i) => {
     const lbl = c.k !== last ? `<span class="vl">${{ q: 'Качество', z: 'Часовой пояс', o: '' }[c.k]}</span>` : ''; last = c.k;
     return lbl + `<span class="vc${c.on ? ' on' : ''}${c.dim ? ' dim' : ''}${S.crow === 1 && i === S.vf ? ' sel' : ''}" data-i="${i}">${esc(c.t)}</span>`;
   }).join('');
-  $('#ctlHint').textContent = S.vchips.length ? 'Влево и вправо: выбор. Вниз: версии канала. OK: выбрать. «Назад»: скрыть.' : 'Влево и вправо: кнопки. OK: выбрать. Вверх или «Назад»: скрыть.';
+  $('#ctlHint').textContent = '';
+  renderPop();
+}
+function openPop(items) {
+  const el = $('#ctlBtns').children[S.cf];
+  S.pop = { items, i: Math.max(0, items.findIndex(c => c.on)) };
+  $('#ctlPop').style.left = (el ? el.offsetLeft : 0) + 'px';
+  renderPop(); bumpCtl();
+}
+function renderPop() {
+  const pop = $('#ctlPop'); if (!S.pop) { pop.classList.add('hidden'); return; }
+  pop.innerHTML = S.pop.items.map((c, i) => `<div class="pi${c.on ? ' on' : ''}${c.dim ? ' dim' : ''}${i === S.pop.i ? ' sel' : ''}" data-i="${i}"><span>${esc(c.k === 'o' ? (c.on ? 'Оригинал: вкл' : 'Оригинал: выкл') : c.t)}</span>${c.on && c.k !== 'o' ? '<span>\u2713</span>' : ''}</div>`).join('');
+  pop.classList.remove('hidden');
 }
 function ctlKey(k) {
   bumpCtl();
-  if (k === 'back') { setMode('watch'); return; }
-  if (S.crow === 1) {
-    if (k === 'left') S.vf = Math.max(0, S.vf - 1);
-    else if (k === 'right') S.vf = Math.min(S.vchips.length - 1, S.vf + 1);
-    else if (k === 'up') S.crow = 0;
-    else if (k === 'ok') { const c = S.vchips[S.vf]; if (c) { pickChip(S.cur, c); setTimeout(renderCtl, 50); } return; }
-    renderCtl(); return;
+  if (S.pop) {
+    if (k === 'up') S.pop.i = Math.max(0, S.pop.i - 1);
+    else if (k === 'down') S.pop.i = Math.min(S.pop.items.length - 1, S.pop.i + 1);
+    else if (k === 'ok') { const c = S.pop.items[S.pop.i]; S.pop = null; renderPop(); if (c) { pickChip(S.cur, c); setTimeout(renderCtl, 60); } return; }
+    else { S.pop = null; renderPop(); return; }
+    renderPop(); return;
   }
+  if (k === 'back') { setMode('watch'); return; }
   if (k === 'left') S.cf = Math.max(0, S.cf - 1);
   else if (k === 'right') S.cf = Math.min(S.cb.length - 1, S.cf + 1);
-  else if (k === 'down') { if (S.vchips && S.vchips.length) { S.crow = 1; const on = S.vchips.findIndex(c => c.on); S.vf = on >= 0 ? on : 0; } }
-  else if (k === 'up') { setMode('watch'); return; }
+  else if (k === 'up' || k === 'down') { setMode('watch'); return; }
   else if (k === 'chup' || k === 'chdown') { zap(k === 'chup' ? 1 : -1); setTimeout(renderCtl, 500); }
   else if (k === 'ok') { const b = S.cb[S.cf]; if (b) b.act(); return; }
   else if (k === 'playpause') watchKey('playpause');
   renderCtl();
 }
+$('#ctlPop').addEventListener('click', e => { const it = e.target.closest('.pi'); if (!it || !S.pop) return; const c = S.pop.items[+it.dataset.i]; S.pop = null; renderPop(); if (c) { pickChip(S.cur, c); setTimeout(renderCtl, 60); } });
 $('#ctlVars').addEventListener('click', e => { const it = e.target.closest('.vc'); if (!it) return; const c = S.vchips[+it.dataset.i]; if (c) { pickChip(S.cur, c); setTimeout(renderCtl, 50); } });
 $('#ctlBtns').addEventListener('click', e => { const it = e.target.closest('.cb'); if (!it) return; S.cf = +it.dataset.i; const b = S.cb[S.cf]; if (b) b.act(); });
 
