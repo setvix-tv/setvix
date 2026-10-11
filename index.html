@@ -261,7 +261,7 @@ body.m-list #shade{opacity:1;background:linear-gradient(90deg,rgba(12,20,36,.96)
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '2026-10-10-6'; // меняется с каждой новой версией
+const BUILD = '2026-10-10-7'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 
@@ -484,7 +484,9 @@ S.hlsReady = new Promise(res => {
 });
 
 function stopVideo() {
+  clearTimeout(S.attT);
   if (S.hls) { try { S.hls.destroy(); } catch (e) {} S.hls = null; }
+  if (S.ts) { try { S.ts.pause(); S.ts.unload(); S.ts.detachMediaElement(); S.ts.destroy(); } catch (e) {} S.ts = null; }
   video.onerror = null; video.removeAttribute('src');
   try { video.load(); } catch (e) {}
   S.playing = false;
@@ -500,30 +502,93 @@ function tryPlay() {
 }
 function armWatchdog(gen) {
   clearTimeout(S.wd);
-  S.wd = setTimeout(() => { if (gen === S.gen && !S.playing) fail(S.cur, gen); }, 18000);
+  S.wd = setTimeout(() => { if (gen === S.gen && !S.playing) fail(S.cur, gen); }, 35000);
 }
-function attach(url, gen, onFail) {
-  let done = false;
-  const failOnce = () => { if (done || gen !== S.gen) return; done = true; onFail(); };
-  const isFile = /\.(mp4|webm|m4v)(\?|#|$)/i.test(url);
-  if (!isFile && window.Hls && Hls.isSupported()) {
-    const h = new Hls({ enableWorker: true, lowLatencyMode: false, maxBufferLength: 24, backBufferLength: 15,
-      manifestLoadingTimeOut: 12000, manifestLoadingMaxRetry: 1, levelLoadingTimeOut: 12000, fragLoadingTimeOut: 20000,
-      xhrSetup: APP ? (xhr, u) => { if (!/^\/proxy/.test(u)) xhr.open('GET', viaApp(u), true); } : undefined });
-    S.hls = h; let recovered = false;
-    h.on(Hls.Events.ERROR, (ev, d) => {
-      if (!d.fatal || gen !== S.gen) return;
-      if (d.type === Hls.ErrorTypes.MEDIA_ERROR && !recovered) { recovered = true; h.recoverMediaError(); return; }
-      try { h.destroy(); } catch (e) {}
-      if (S.hls === h) S.hls = null;
-      if (S.playing && !S.retried) { S.retried = true; S.playing = false; showLoader(''); armWatchdog(gen); attach(url, gen, onFail); return; }
+
+/* В приложении все запросы плеера идут через встроенный прокси приставки.
+   Важно: плееру сообщаем исходный адрес ответа, иначе он не найдёт куски видео по относительным ссылкам. */
+let ProxyLoader = null;
+function getProxyLoader() {
+  if (ProxyLoader || !window.Hls) return ProxyLoader;
+  const Base = Hls.DefaultConfig.loader;
+  ProxyLoader = class extends Base {
+    load(context, config, callbacks) {
+      const orig = context.url;
+      if (/^https?:\/\//i.test(orig)) context.url = viaApp(orig);
+      const ok = callbacks.onSuccess;
+      const cb = Object.assign({}, callbacks, {
+        onSuccess: (response, stats, ctx, net) => { response.url = orig; if (ctx) ctx.url = orig; ok(response, stats, ctx, net); }
+      });
+      super.load(context, config, cb);
+    }
+  };
+  return ProxyLoader;
+}
+
+/* Многие IPTV-плейлисты отдают не HLS (.m3u8), а прямой поток MPEG-TS. Для него нужен отдельный движок. */
+let tsLib = null;
+function loadTsLib() {
+  if (tsLib) return tsLib;
+  tsLib = new Promise(res => {
+    if (window.mpegts) return res(true);
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/mpegts.js@1.7.3/dist/mpegts.min.js';
+    s.onload = () => res(true); s.onerror = () => res(false); document.head.appendChild(s);
+  });
+  return tsLib;
+}
+
+function attachHls(url, gen, failOnce) {
+  if (!(window.Hls && Hls.isSupported())) {
+    if (video.canPlayType('application/vnd.apple.mpegurl')) { video.onerror = failOnce; video.src = url; tryPlay(); return; }
+    return failOnce();
+  }
+  const cfg = { enableWorker: true, lowLatencyMode: false, maxBufferLength: 24, backBufferLength: 15,
+    manifestLoadingTimeOut: 10000, manifestLoadingMaxRetry: 1, levelLoadingTimeOut: 12000, fragLoadingTimeOut: 20000 };
+  if (APP) cfg.loader = getProxyLoader();
+  const h = new Hls(cfg);
+  S.hls = h; let recovered = false;
+  h.on(Hls.Events.ERROR, (ev, d) => {
+    if (!d.fatal || gen !== S.gen) return;
+    if (d.type === Hls.ErrorTypes.MEDIA_ERROR && !recovered) { recovered = true; h.recoverMediaError(); return; }
+    try { h.destroy(); } catch (e) {}
+    if (S.hls === h) S.hls = null;
+    if (S.playing && !S.retried) { S.retried = true; S.playing = false; showLoader(''); armWatchdog(gen); attachHls(url, gen, failOnce); return; }
+    failOnce();
+  });
+  h.on(Hls.Events.MANIFEST_PARSED, () => { if (gen === S.gen) tryPlay(); });
+  h.loadSource(url); h.attachMedia(video);
+}
+async function attachTs(url, gen, failOnce) {
+  if (!(await loadTsLib()) || !window.mpegts || gen !== S.gen) return failOnce();
+  if (!mpegts.getFeatureList().mseLivePlayback) return failOnce();
+  try {
+    const p = mpegts.createPlayer({ type: 'mpegts', isLive: true, url: APP ? viaApp(url) : url },
+      { enableWorker: true, lazyLoad: false, liveBufferLatencyChasing: true, autoCleanupSourceBuffer: true });
+    S.ts = p;
+    p.on(mpegts.Events.ERROR, () => {
+      if (gen !== S.gen) return;
+      try { p.destroy(); } catch (e) {}
+      if (S.ts === p) S.ts = null;
+      if (S.playing && !S.retried) { S.retried = true; S.playing = false; showLoader(''); armWatchdog(gen); attachTs(url, gen, failOnce); return; }
       failOnce();
     });
-    h.on(Hls.Events.MANIFEST_PARSED, () => { if (gen === S.gen) tryPlay(); });
-    h.loadSource(url); h.attachMedia(video);
-  } else if (isFile || video.canPlayType('application/vnd.apple.mpegurl')) {
-    video.onerror = failOnce; video.src = url; tryPlay();
-  } else failOnce();
+    p.attachMediaElement(video); p.load(); tryPlay();
+  } catch (e) { failOnce(); }
+}
+function attach(attempt, gen, onFail) {
+  let done = false;
+  const failOnce = () => {
+    if (done || gen !== S.gen) return; done = true; clearTimeout(S.attT);
+    if (S.hls) { try { S.hls.destroy(); } catch (e) {} S.hls = null; }
+    if (S.ts) { try { S.ts.destroy(); } catch (e) {} S.ts = null; }
+    onFail();
+  };
+  clearTimeout(S.attT);
+  S.attT = setTimeout(() => { if (gen === S.gen && !S.playing) failOnce(); }, 14000);
+  const { url, engine } = attempt;
+  if (/\.(mp4|webm|m4v)(\?|#|$)/i.test(url)) { video.onerror = failOnce; video.src = url; tryPlay(); return; }
+  if (engine === 'ts') attachTs(url, gen, failOnce); else attachHls(url, gen, failOnce);
 }
 function play(idx, auto) {
   const ch = S.channels[idx]; if (!ch) return;
@@ -532,8 +597,11 @@ function play(idx, auto) {
   S.cur = idx; S.retried = false; store.set('last', ch.key); pushRecent(ch.key);
   const gen = ++S.gen; stopVideo(); showLoader(ch.name); armWatchdog(gen);
   const urls = (!APP && location.protocol === 'https:' && /^http:/i.test(ch.url)) ? ['https' + ch.url.slice(4), ch.url] : [ch.url];
+  const hlsFirst = /\.m3u8?(\?|#|$)/i.test(ch.url) || /m3u8/i.test(ch.url);
+  const engines = hlsFirst ? ['hls', 'ts'] : ['ts', 'hls'];
+  const attempts = []; urls.forEach(u => engines.forEach(e => attempts.push({ url: u, engine: e })));
   let k = 0;
-  const next = () => { if (gen !== S.gen) return; if (k >= urls.length) return fail(idx, gen); attach(urls[k++], gen, next); };
+  const next = () => { if (gen !== S.gen) return; if (k >= attempts.length) return fail(idx, gen); attach(attempts[k++], gen, next); };
   S.hlsReady.then(next);
   updateOSD();
 }
