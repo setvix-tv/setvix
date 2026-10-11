@@ -225,6 +225,142 @@ body.native:not(.idle) #ambient{opacity:0}
 .osd-badge{display:inline-block;background:var(--amber);color:var(--ink);font-weight:700;font-size:.9rem;padding:.15rem .6rem;border-radius:.4rem;margin-left:.8rem;vertical-align:.3rem}
 .osd-q{color:var(--muted);font-weight:700;font-size:.95rem;margin-left:.8rem}
 
+#gsel{z-index:6;display:grid;place-items:center;background:rgba(8,13,24,.86);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+#gselList{background:none;padding:0}
+.li .off{margin-left:auto;color:var(--muted);font-weight:700}
+
+/* ---------- Телефон: вертикальный режим ---------- */
+#mob{display:none}
+html.mobile{font-size:15px!important}
+body.mob #mob{display:flex;flex-direction:column;position:fixed;inset:0;z-index:4;background:transparent}
+body.mob #home,body.mob #list,body.mob #osd,body.mob #guide,body.mob #opts,body.mob #search,body.mob #shade,body.mob #ambient{display:none!important}
+body.mob #video{top:0;left:0;width:100vw;height:56.25vw;bottom:auto;z-index:3}
+body.mob #loader{top:0;bottom:auto;height:56.25vw;z-index:6}
+body.mob #loaderText{font-size:1.2rem}
+#mVideo{flex:none;width:100vw;height:56.25vw;background:transparent}
+.m-body{flex:1;display:flex;flex-direction:column;min-height:0;background:var(--night)}
+.m-now{display:flex;align-items:center;gap:.8rem;padding:.9rem 1rem .6rem}
+#mNowLogo .llogo{width:3.6rem;height:2.4rem}
+.m-now-t{flex:1;min-width:0}
+.m-now-t b{display:block;font-family:var(--serif);font-weight:650;font-size:1.3rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.m-now-t span{display:block;color:var(--muted);font-size:.9rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:.15rem 0 .35rem}
+.m-now-t .bar{height:.2rem}
+.m-ic{flex:none;width:2.8rem;height:2.8rem;border-radius:50%;border:0;background:rgba(237,240,246,.08);color:var(--text);font-size:1.3rem}
+.m-ic.on{color:var(--amber)}
+.m-tabs{display:flex;gap:.3rem;padding:0 .8rem .5rem;border-bottom:1px solid var(--line)}
+.m-tabs button{flex:1;border:0;background:none;color:var(--muted);font:700 .95rem var(--sans);padding:.7rem .2rem;border-bottom:.2rem solid transparent}
+.m-tabs button.on{color:var(--text);border-bottom-color:var(--amber)}
+.m-pane{flex:1;display:flex;flex-direction:column;min-height:0}
+.m-pane.hidden{display:none}
+#mSearch{margin:.7rem .9rem .3rem;padding:.7rem 1rem;border-radius:.8rem;border:0;background:rgba(237,240,246,.07);color:var(--text);font:600 16px var(--sans);outline:none}
+.m-chips{display:flex;gap:.5rem;overflow-x:auto;padding:.5rem .9rem;scrollbar-width:none;flex:none}
+.m-chips::-webkit-scrollbar{display:none}
+.m-chips button{flex:none;border:0;border-radius:2rem;padding:.45rem .9rem;background:rgba(237,240,246,.07);color:var(--text);font:600 .9rem var(--sans);white-space:nowrap}
+.m-chips button.on{background:var(--amber);color:var(--ink)}
+.m-list{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:.2rem .5rem 2rem}
+.m-list .li{min-height:3.8rem;padding:.5rem .6rem}
+.m-list .li.playing{background:rgba(242,181,68,.12)}
+.m-p{display:flex;gap:.9rem;padding:.7rem .7rem;border-radius:.7rem;align-items:baseline}
+.m-p time{flex:none;width:3.2rem;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
+.m-p b{font-weight:600}
+.m-p small{display:block;color:var(--muted);font-size:.85rem;margin-top:.2rem}
+.m-p.now{background:rgba(242,181,68,.13)}
+.m-p.past{opacity:.55}
+.m-p.arch{opacity:.95}
+.m-p.arch time{color:var(--amber)}
+body.mob #toast{width:92vw;max-width:none;top:.6rem;font-size:.95rem;padding:.7rem 1rem}
+.m-day{color:var(--muted);font-weight:700;font-size:.85rem;padding:1rem .7rem .3rem}
+#mSheet{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.5);display:flex;align-items:flex-end}
+#mSheet.hidden{display:none}
+.m-sheet-in{width:100%;background:var(--deep);border-radius:1.2rem 1.2rem 0 0;padding:1rem .8rem 1.6rem;max-height:75vh;overflow-y:auto}
+.m-sheet-in .opt{margin:.35rem 0}
+body.mob .sheet{width:94vw;padding:1.4rem 1.2rem;max-height:92vh;overflow-y:auto}
+body.mob #settings,body.mob #upd,body.mob #gsel{z-index:10}
+
+/* ---------- Панель управления (OK во время просмотра) ---------- */
+#ctl{position:fixed;left:0;right:0;bottom:0;z-index:5;padding:5rem 4rem 2.6rem;
+  background:linear-gradient(0deg,rgba(8,13,24,.96) 0%,rgba(8,13,24,.85) 55%,rgba(8,13,24,0) 100%);
+  transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1),visibility .35s}
+#ctl.hidden{opacity:0;visibility:hidden;transform:translateY(2.5rem);pointer-events:none}
+.ctl-top{display:flex;align-items:center;gap:1.6rem}
+.ctl-logo .osd-logo{width:8rem;height:5rem}
+.ctl-t{flex:1;min-width:0}
+.ctl-ch{display:block;color:var(--muted);font-weight:700;font-size:1.05rem;letter-spacing:.01em}
+.ctl-prog{display:block;font-family:var(--serif);font-weight:650;font-size:2.4rem;letter-spacing:-.02em;line-height:1.15;margin:.2rem 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl-next{display:block;color:var(--muted);font-size:1.05rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ctl-r{text-align:right;display:flex;flex-direction:column;gap:.3rem;align-items:flex-end}
+.ctl-r .clock{font-size:1.8rem;color:var(--text);margin:0}
+.ctl-left{color:var(--amber);font-weight:700;font-variant-numeric:tabular-nums}
+.ctl-time{display:flex;align-items:center;gap:1.2rem;margin:1.4rem 0 1.4rem;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
+.ctl-bar{flex:1;height:.35rem}
+.ctl-btns{display:flex;gap:1rem;align-items:center}
+.cb{display:flex;align-items:center;gap:.7rem;height:3.6rem;padding:0 1.2rem;border-radius:1.8rem;background:rgba(237,240,246,.09);color:var(--text);font-weight:700;font-size:1.02rem;
+  transition:background .2s,color .2s,transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}
+.cb svg{width:1.6rem;height:1.6rem;flex:none}
+.cb.ic{width:3.6rem;padding:0;justify-content:center}
+.cb.sel{background:var(--text);color:var(--night);transform:scale(1.08);box-shadow:0 .8rem 2rem rgba(0,0,0,.45)}
+.cb.on svg{color:var(--amber)}
+.cb.sel.on svg{color:#b8860b}
+.ctl-vars{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap;margin-top:1rem}
+.ctl-vars:empty{display:none}
+.ctl-vars .vl{color:var(--muted);font-weight:700;font-size:.95rem;margin:0 .3rem 0 .6rem}
+.ctl-vars .vl:first-child{margin-left:0}
+.vc{padding:.55rem 1.1rem;border-radius:1.4rem;background:rgba(237,240,246,.07);font-weight:700;font-size:1rem;color:var(--muted);transition:all .2s}
+.vc.on{color:var(--amber);background:rgba(242,181,68,.14)}
+.vc.dim{opacity:.5}
+.vc.sel{background:var(--text);color:var(--night);transform:scale(1.08)}
+.ctl-hint{color:var(--muted);font-size:.95rem;font-weight:600;margin-top:1.1rem}
+
+/* ---------- Программа рядом с видео ---------- */
+#prog{z-index:5;display:flex;gap:2.2rem;padding:3rem 3rem 2.4rem;background:linear-gradient(90deg,rgba(8,13,24,.94),rgba(8,13,24,.98));
+  transition:opacity .35s ease,transform .45s cubic-bezier(.2,.8,.2,1),visibility .35s}
+#prog.hidden{transform:translateX(3rem)}
+.pg-left{width:46%;display:flex;flex-direction:column;gap:1.4rem}
+#pgVid{width:100%;aspect-ratio:16/9;border-radius:1rem;background:#000;box-shadow:0 1.4rem 3rem rgba(0,0,0,.5)}
+body.native #pgVid{background:transparent;outline:.15rem solid rgba(237,240,246,.12)}
+.pg-card{background:rgba(237,240,246,.05);border-radius:1rem;padding:1.4rem 1.6rem}
+.pg-card .pc-ch{display:flex;align-items:center;gap:1rem;color:var(--muted);font-weight:700}
+.pg-card .pc-ch .llogo{width:4.4rem;height:2.8rem}
+.pg-card b{display:block;font-family:var(--serif);font-weight:650;font-size:1.7rem;line-height:1.2;margin:.8rem 0 .4rem}
+.pg-card p{color:var(--muted);font-weight:600;font-size:1rem;line-height:1.45;max-height:6rem;overflow:hidden}
+.pg-right{flex:1;display:flex;flex-direction:column;min-width:0}
+.pg-tabs{display:flex;gap:.5rem;margin-bottom:1rem}
+.pg-tabs span{flex:1;text-align:center;padding:.9rem;border-radius:.9rem;font-weight:700;font-size:1.15rem;color:var(--muted);background:rgba(237,240,246,.05);transition:all .25s}
+.pg-tabs span.on{color:var(--ink);background:var(--amber)}
+.pg-list{flex:1;overflow:hidden;position:relative}
+.pg-it{padding:1rem 1.3rem;border-radius:.9rem;margin-bottom:.45rem;background:rgba(237,240,246,.04);transition:background .2s,transform .25s cubic-bezier(.2,.8,.2,1)}
+.pg-it b{display:block;font-size:1.15rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pg-it small{display:flex;justify-content:space-between;color:var(--muted);font-weight:600;font-size:.95rem;margin-top:.25rem}
+.pg-it .tag{color:var(--amber);font-weight:700}
+.pg-it.now .tag{color:var(--live)}
+.pg-it.sel{background:var(--text);color:var(--night);transform:scale(1.02)}
+.pg-it.sel small{color:rgba(12,20,36,.65)}
+.pg-it.sel .tag{color:#9a6b00}
+.pg-it.na{opacity:.45}
+
+/* ---------- Информация ---------- */
+#info{z-index:6;display:grid;place-items:center;background:rgba(8,13,24,.55);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px)}
+.info-card{width:min(58rem,92vw);background:rgba(21,33,58,.96);border:1px solid var(--line);border-radius:1.4rem;padding:2.2rem 2.6rem;box-shadow:0 2rem 4rem rgba(0,0,0,.5)}
+.info-card h2{font-family:var(--serif);font-weight:650;font-size:2.1rem;letter-spacing:-.02em;line-height:1.15}
+.info-card .meta{color:var(--muted);font-weight:700;margin:.6rem 0 1.2rem}
+.info-card h3{font-size:1rem;color:var(--amber);font-weight:700;margin:1.1rem 0 .3rem}
+.info-card p{font-size:1.1rem;line-height:1.5;color:var(--text)}
+.info-card .badges{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.4rem}
+.info-card .badges span{background:rgba(237,240,246,.1);border-radius:.5rem;padding:.25rem .7rem;font-weight:700;font-size:.95rem}
+
+/* Плавность */
+.layer{transition:opacity .35s ease,visibility .35s,transform .45s cubic-bezier(.2,.8,.2,1)}
+#home.hidden{transform:scale(1.02)}
+#list.hidden{transform:translateX(-2rem)}
+#opts.hidden{transform:translateX(2rem)}
+#guide.hidden{transform:translateY(1.5rem)}
+.hero-art{position:absolute;right:0;top:0;width:55vw;height:62vh;background-size:cover;background-position:center;opacity:0;transition:opacity .8s;
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 40%),linear-gradient(0deg,transparent 0,#000 40%);-webkit-mask-composite:source-in;mask-image:linear-gradient(90deg,transparent 0,#000 40%);z-index:-1}
+.hero-art.on{opacity:.55}
+
+.m-vars{margin:.3rem 0 .8rem}
+.m-vars .vl{width:100%;margin:.6rem 0 0}
+
 /* Сообщения */
 #toast{position:fixed;z-index:7;top:2.4rem;left:50%;transform:translate(-50%,-1rem);max-width:62rem;background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
   border:1px solid var(--line);padding:1rem 1.6rem;border-radius:1rem;font-size:1.15rem;font-weight:600;line-height:1.4;text-align:center;opacity:0;visibility:hidden;transition:opacity .3s,transform .3s,visibility .3s}
@@ -249,6 +385,7 @@ body.native:not(.idle) #ambient{opacity:0}
     <button class="tb" data-tb="3">Настройки</button>
     <span class="clock"></span>
   </header>
+  <div class="hero-art" id="heroArt"></div>
   <div id="hero"><div class="hero-body"></div></div>
   <div id="rows"><div id="rowsTrack"></div></div>
 </section>
@@ -283,6 +420,7 @@ body.native:not(.idle) #ambient{opacity:0}
       <button id="btnDemo">Демо-каналы</button>
       <button id="btnClose">Закрыть</button>
       <button id="btnDiag">Проверить канал</button>
+      <button id="btnGroups">Группы каналов</button>
     </div>
     <p id="setStatus" class="status"></p>
     <p class="tip">Пульт: стрелки двигают выбор, OK открывает поле или нажимает кнопку. <span id="verLabel"></span></p>
@@ -317,6 +455,59 @@ body.native:not(.idle) #ambient{opacity:0}
   </div>
 </section>
 
+<section id="mob">
+  <div id="mVideo"></div>
+  <div class="m-body">
+    <div class="m-now">
+      <div id="mNowLogo"></div>
+      <div class="m-now-t"><b id="mNowName">Setvix</b><span id="mNowProg"></span><div class="bar"><i id="mNowBar"></i></div></div>
+      <button id="mFav" class="m-ic" aria-label="Избранное">&#9734;</button>
+      <button id="mOpt" class="m-ic" aria-label="Опции">&#8943;</button>
+    </div>
+    <div class="m-tabs">
+      <button data-t="ch" class="on">Каналы</button><button data-t="pg">Программа</button><button data-t="fav">Избранное</button><button data-t="set">Настройки</button>
+    </div>
+    <div id="mPaneCh" class="m-pane">
+      <input id="mSearch" type="search" placeholder="Поиск канала" autocomplete="off" spellcheck="false">
+      <div id="mGroups" class="m-chips"></div>
+      <div id="mList" class="m-list"></div>
+    </div>
+    <div id="mPanePg" class="m-pane hidden"><div id="mProg" class="m-list"></div></div>
+  </div>
+  <div id="mSheet" class="hidden"><div class="m-sheet-in" id="mSheetIn"></div></div>
+</section>
+
+<section id="ctl" class="hidden">
+  <div class="ctl-top">
+    <div class="ctl-logo" id="ctlLogo"></div>
+    <div class="ctl-t">
+      <span class="ctl-ch" id="ctlCh"></span>
+      <b class="ctl-prog" id="ctlProg"></b>
+      <span class="ctl-next" id="ctlNext"></span>
+    </div>
+    <div class="ctl-r"><span class="ctl-left" id="ctlLeft"></span><span class="clock"></span></div>
+  </div>
+  <div class="ctl-time"><span id="ctlT0"></span><div class="bar ctl-bar"><i id="ctlBar"></i></div><span id="ctlT1"></span></div>
+  <div class="ctl-btns" id="ctlBtns"></div>
+  <div class="ctl-vars" id="ctlVars"></div>
+  <p class="ctl-hint" id="ctlHint"></p>
+</section>
+
+<section id="prog" class="layer hidden">
+  <div class="pg-left">
+    <div id="pgVid"></div>
+    <div class="pg-card" id="pgCard"></div>
+  </div>
+  <div class="pg-right">
+    <div class="pg-tabs"><span data-t="live">Прямой эфир</span><span data-t="arch">Архив</span></div>
+    <div class="pg-list" id="pgList"></div>
+  </div>
+</section>
+
+<section id="info" class="layer hidden">
+  <div class="info-card" id="infoCard"></div>
+</section>
+
 <section id="opts" class="layer hidden">
   <div class="opts-panel">
     <p class="opts-ch" id="optsCh"></p>
@@ -345,6 +536,14 @@ body.native:not(.idle) #ambient{opacity:0}
   </div>
 </section>
 
+<section id="gsel" class="layer hidden">
+  <div class="sheet">
+    <h2>Группы каналов</h2>
+    <p class="sub">OK включает или скрывает группу. Скрытые группы не показываются нигде. «Назад» сохраняет.</p>
+    <div id="gselList" class="lcol on"></div>
+  </div>
+</section>
+
 <section id="upd" class="layer hidden">
   <div class="sheet upd-sheet">
     <h2>Новая версия приложения</h2>
@@ -362,12 +561,12 @@ body.native:not(.idle) #ambient{opacity:0}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '2026-10-11-1'; // меняется с каждой новой версией
+const BUILD = '2026-10-11-8'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
 const NATIVE = !!(window.SetvixNative && typeof window.SetvixNative.play === 'function');
-const APK_LATEST = 4; // номер последней версии приложения на GitHub
+const APK_LATEST = 5; // номер последней версии приложения на GitHub
 const APK_URL = 'https://github.com/setvix-tv/setvix/releases/latest/download/setvix-tv.apk';
 if (NATIVE) { document.documentElement.classList.add('native'); document.body.classList.add('native'); }
 
@@ -469,10 +668,12 @@ function parseM3U(text) {
       const a = {}; l.replace(/([\w-]+)="([^"]*)"/g, (m, k, v) => { a[k.toLowerCase()] = v; return m; });
       const q = l.lastIndexOf('"'); const ci = l.indexOf(',', q > 0 ? q : 0);
       const name = (ci >= 0 ? l.slice(ci + 1) : '').trim() || a['tvg-name'] || 'Канал';
-      const cu = (a['catchup'] || a['catchup-type'] || head['catchup'] || head['catchup-type'] || (a['timeshift'] || a['tvg-rec'] ? 'shift' : '')).toLowerCase();
-      const days = +(a['catchup-days'] || a['timeshift'] || a['tvg-rec'] || head['catchup-days'] || head['timeshift'] || 0);
+      const days = +(a['catchup-days'] || a['timeshift'] || a['tvg-rec'] || head['catchup-days'] || head['timeshift'] || head['tvg-rec'] || 0);
+      let cu = (a['catchup'] || a['catchup-type'] || head['catchup'] || head['catchup-type'] || '').toLowerCase();
+      if (!cu && days > 0) cu = 'shift';
+      if (cu === 'disabled' || ((a['tvg-rec'] === '0' || a['timeshift'] === '0') && !a['catchup'])) cu = '';
       meta = { name, logo: a['tvg-logo'] || '', group: a['group-title'] || '', tvgId: a['tvg-id'] || '', tvgName: a['tvg-name'] || '',
-        cu: cu && days > 0 ? cu : (cu && cu !== 'disabled' ? cu : ''), cuDays: days || (cu ? 3 : 0), cuSrc: a['catchup-source'] || head['catchup-source'] || '' };
+        cu, cuDays: cu ? (days || 3) : 0, cuSrc: a['catchup-source'] || head['catchup-source'] || '' };
     } else if (/^#EXTGRP:/i.test(l)) {
       grp = l.slice(8).trim();
     } else if (l[0] !== '#') {
@@ -484,10 +685,45 @@ function parseM3U(text) {
   }
   return out;
 }
+/* Один канал часто идёт в нескольких версиях: 4K, Full HD, HD, обычная, «orig», со сдвигом +2 часа.
+   Склеиваем их в одну карточку, а версию выбираем в меню опций. */
+const Q_RE = /\s+(UHD|4K|FHD|HD|SD|50|orig)\b/gi;
+function variantInfo(name) {
+  const tz = /\s\+(\d{1,2})\b/.exec(name);
+  const toks = (name.match(Q_RE) || []).map(t => t.trim().toLowerCase());
+  const base = name.replace(/\s\+\d{1,2}\b/, '').replace(Q_RE, '').replace(/\s{2,}/g, ' ').trim() || name;
+  const q = toks.includes('uhd') || toks.includes('4k') ? '4K' : toks.includes('fhd') ? 'Full HD' : toks.includes('hd') ? 'HD' : 'SD';
+  const orig = toks.includes('orig'), fps50 = toks.includes('50'), shift = tz ? +tz[1] : 0;
+  const label = [q, fps50 ? '50 кадров' : '', orig ? 'оригинал' : '', shift ? `+${shift} ч` : ''].filter(Boolean).join(', ');
+  const score = (shift ? 0 : 1000) + (orig ? 0 : 100) + ({ 'Full HD': 40, 'HD': 30, '4K': 20, 'SD': 10 }[q]) + (fps50 ? 1 : 0);
+  return { base, label, score, q, orig, fps50, shift };
+}
+const hiddenGroups = () => new Set(store.get('hidG', ['Взрослые', 'Adult', 'XXX', '18+']));
 function setChannels(list) {
-  S.channels = list.map((c, i) => ({ name: c.name, logo: c.logo || '', tvgId: c.tvgId || '', tvgName: c.tvgName || '', group: c.group || 'Без группы', url: c.url, num: i + 1, key: c.url, epgId: null,
-    cu: c.cu || '', cuDays: c.cuDays || 0, cuSrc: c.cuSrc || '' }));
+  S.raw = list;
+  const hid = hiddenGroups();
+  const byBase = new Map(); const merged = [];
+  list.forEach(c => {
+    const group = c.group || 'Без группы';
+    if (hid.has(group)) return;
+    const vi = variantInfo(c.name);
+    const key = group + '|' + vi.base;
+    let m = byBase.get(key);
+    if (!m) { m = { name: vi.base, group, key, logo: c.logo || '', tvgId: c.tvgId || '', tvgName: c.tvgName || '', variants: [] }; byBase.set(key, m); merged.push(m); }
+    if (!m.logo && c.logo) m.logo = c.logo;
+    if (!m.tvgId && c.tvgId && !/\s\+\d/.test(c.name)) m.tvgId = c.tvgId;
+    m.variants.push({ name: c.name, url: c.url, label: vi.label, score: vi.score, q: vi.q, orig: vi.orig, fps50: vi.fps50, shift: vi.shift, cu: c.cu || '', cuDays: c.cuDays || 0, cuSrc: c.cuSrc || '' });
+  });
+  S.channels = merged.map((m, i) => {
+    m.variants.sort((a, b) => b.score - a.score);
+    const savedUrl = store.get('var:' + m.key, '');
+    let vi = m.variants.findIndex(v => v.url === savedUrl); if (vi < 0) vi = 0;
+    const v = m.variants[vi];
+    return { name: m.name, logo: m.logo, tvgId: m.tvgId, tvgName: m.tvgName, group: m.group, key: m.key, num: i + 1, epgId: null,
+      variants: m.variants, vi, url: v.url, cu: v.cu, cuDays: v.cuDays, cuSrc: v.cuSrc, qlabel: v.label };
+  });
   S.byKey = new Map(S.channels.map((c, i) => [c.key, i]));
+  try { const lg = JSON.parse(localStorage.getItem('setvix:logos') || '{}'); S.channels.forEach(c => { if (!c.logo && lg[c.key]) c.logo = lg[c.key]; }); } catch (e) {}
   S.epg = new Map(); S.cur = -1;
   const g = new Map();
   S.channels.forEach((c, i) => { if (!g.has(c.group)) g.set(c.group, []); g.get(c.group).push(i); });
@@ -512,6 +748,41 @@ function toggleFav(i) {
   store.set('fav', [...S.fav]);
 }
 const isFav = i => S.channels[i] && S.fav.has(S.channels[i].key);
+/* Кнопки версий в панели: качество (SD → 4K), часовой пояс, оригинал */
+const Q_ORDER = ['SD', 'HD', 'HD 50', 'Full HD', '4K'];
+const qk = v => v.q + (v.fps50 ? ' 50' : '');
+function varChips(ch) {
+  if (!ch || !ch.variants || ch.variants.length < 2) return [];
+  const v = ch.variants[ch.vi], out = [];
+  const same = ch.variants.filter(x => x.shift === v.shift && x.orig === v.orig);
+  const qs = [...new Set(ch.variants.map(qk))].sort((a, b) => Q_ORDER.indexOf(a) - Q_ORDER.indexOf(b));
+  const here = new Set(same.map(qk));
+  if (qs.length > 1) qs.forEach(q => out.push({ k: 'q', v: q, t: q, on: qk(v) === q, dim: !here.has(q) }));
+  const tzs = [...new Set(ch.variants.map(x => x.shift))].sort((a, b) => a - b);
+  if (tzs.length > 1) tzs.forEach(z => out.push({ k: 'z', v: z, t: z ? `+${z} ч` : 'Основной', on: v.shift === z }));
+  if (ch.variants.some(x => x.orig) && ch.variants.some(x => !x.orig)) out.push({ k: 'o', t: 'Оригинал', on: v.orig });
+  return out;
+}
+function pickChip(ci, chip) {
+  const ch = S.channels[ci]; if (!ch) return;
+  const v = ch.variants[ch.vi];
+  const want = { q: qk(v), shift: v.shift, orig: v.orig };
+  if (chip.k === 'q') want.q = chip.v; else if (chip.k === 'z') want.shift = chip.v; else want.orig = !v.orig;
+  const prio = chip.k === 'z' ? ['shift', 'orig', 'q'] : chip.k === 'o' ? ['orig', 'shift', 'q'] : ['q', 'shift', 'orig'];
+  let best = -1, bs = -1;
+  ch.variants.forEach((x, i) => {
+    const val = { q: qk(x), shift: x.shift, orig: x.orig };
+    const sc = (val[prio[0]] === want[prio[0]] ? 1000 : 0) + (val[prio[1]] === want[prio[1]] ? 100 : 0) + (val[prio[2]] === want[prio[2]] ? 10 : 0) + x.score / 10000;
+    if (sc > bs) { bs = sc; best = i; }
+  });
+  if (best >= 0 && best !== ch.vi) { setVariant(ci, best); toast('Версия: ' + ch.qlabel, 2500); play(ci); }
+}
+function setVariant(ci, n) {
+  const ch = S.channels[ci]; if (!ch || !ch.variants[n]) return;
+  const v = ch.variants[n]; ch.vi = n;
+  Object.assign(ch, { url: v.url, cu: v.cu, cuDays: v.cuDays, cuSrc: v.cuSrc, qlabel: v.label });
+  store.set('var:' + ch.key, v.url);
+}
 function pushRecent(key) { S.recent = [key, ...S.recent.filter(k => k !== key)].slice(0, 12); store.set('recent', S.recent); }
 
 /* ---------- Телепрограмма (потоковый разбор, только нужные каналы) ---------- */
@@ -522,13 +793,15 @@ function xt(s) {
   else t += new Date().getTimezoneOffset() * 60000;
   return t;
 }
-const attr = (chunk, n) => { const m = new RegExp('\\s' + n + '="([^"]*)"').exec(chunk); return m ? decodeEnt(m[1]) : ''; };
+const ATTR_RE = {};
+const attr = (chunk, n) => { const re = ATTR_RE[n] || (ATTR_RE[n] = new RegExp('\\s' + n + '="([^"]*)"')); const m = re.exec(chunk); return m ? decodeEnt(m[1]) : ''; };
 
 async function loadEPG(url) {
   if (!S.channels.length) return;
+  S.epgBytes = 0;
   const ids = new Set(S.channels.map(c => c.tvgId).filter(Boolean));
   const names = new Set(); S.channels.forEach(c => { names.add(norm(c.name)); if (c.tvgName) names.add(norm(c.tvgName)); });
-  const epg = new Map(), nameToId = new Map(), wanted = new Set();
+  const epg = new Map(), nameToId = new Map(), wanted = new Set(), icons = new Map();
   const pastH = S.channels.some(c => c.cu) ? Math.min(72, 24 * Math.max(1, ...S.channels.map(c => c.cuDays || 0))) : 3;
   const from = Date.now() - pastH * 3600e3, to = Date.now() + 26 * 3600e3;
 
@@ -537,7 +810,7 @@ async function loadEPG(url) {
     let ok = ids.has(id);
     const re = /<display-name[^>]*>([\s\S]*?)<\/display-name>/g; let m;
     while ((m = re.exec(chunk))) { const n = norm(decodeEnt(m[1])); if (n && names.has(n)) { ok = true; if (!nameToId.has(n)) nameToId.set(n, id); } }
-    if (ok) wanted.add(id);
+    if (ok) { wanted.add(id); const ic = /<icon[^>]*\ssrc="([^"]+)"/.exec(chunk); if (ic) icons.set(id, decodeEnt(ic[1])); }
   };
   const onPr = chunk => {
     const id = attr(chunk, 'channel'); if (!wanted.has(id)) return;
@@ -546,12 +819,17 @@ async function loadEPG(url) {
     const t = /<title[^>]*>([\s\S]*?)<\/title>/.exec(chunk);
     const dsc = /<desc[^>]*>([\s\S]*?)<\/desc>/.exec(chunk);
     let a = epg.get(id); if (!a) { a = []; epg.set(id, a); }
-    a.push({ s, e, t: t ? decodeEnt(t[1]).trim() : 'Без названия', d: dsc ? decodeEnt(dsc[1]).trim().slice(0, 160) : '' });
+    const pi = /<icon[^>]*\ssrc="([^"]+)"/.exec(chunk);
+    const o = { s, e, t: t ? decodeEnt(t[1]).trim() : 'Без названия', d: dsc ? decodeEnt(dsc[1]).trim().slice(0, 220) : '' };
+    if (pi) o.i = decodeEnt(pi[1]);
+    a.push(o);
   };
+  /* Линейный разбор: позиции следующих тегов ищем только когда прошли предыдущие (иначе на большом файле зависает) */
   const scan = b => {
-    let p = 0;
+    let p = 0, ic = b.indexOf('<channel', 0), ip = b.indexOf('<programme', 0);
     for (;;) {
-      const ic = b.indexOf('<channel', p), ip = b.indexOf('<programme', p);
+      if (ic >= 0 && ic < p) ic = b.indexOf('<channel', p);
+      if (ip >= 0 && ip < p) ip = b.indexOf('<programme', p);
       if (ic < 0 && ip < 0) return b.slice(Math.max(p, b.length - 12));
       const isC = ip < 0 || (ic >= 0 && ic < ip); const i = isC ? ic : ip; const end = isC ? '</channel>' : '</programme>';
       const e = b.indexOf(end, i); if (e < 0) return b.slice(i);
@@ -575,37 +853,55 @@ async function loadEPG(url) {
   for (;;) {
     const { done, value } = await reader.read(); if (done) break;
     buf = scan(buf + dec.decode(value, { stream: true }));
-    if (++n % 40 === 0) await new Promise(res => setTimeout(res, 0));
+    S.epgBytes = (S.epgBytes || 0) + value.length;
+    if (++n % 40 === 0) { S.epgStat = `загружается: ${(S.epgBytes / 1048576).toFixed(1)} МБ, найдено каналов ${epg.size}`; await new Promise(res => setTimeout(res, 0)); }
   }
   scan(buf + dec.decode());
   for (const a of epg.values()) a.sort((x, y) => x.s - y.s);
   S.epg = epg;
-  S.channels.forEach(c => { c.epgId = (c.tvgId && epg.has(c.tvgId)) ? c.tvgId : (nameToId.get(norm(c.tvgName)) || nameToId.get(norm(c.name)) || null); });
+  S.channels.forEach(c => {
+    c.epgId = (c.tvgId && epg.has(c.tvgId)) ? c.tvgId : (nameToId.get(norm(c.tvgName)) || nameToId.get(norm(c.name)) || null);
+    if (!c.logo && c.epgId && icons.has(c.epgId)) c.logo = icons.get(c.epgId);
+  });
+  if (S.mode === 'home') { $('#rowsTrack').innerHTML = ''; renderHome(); }
 }
 /* Телепрограмма по умолчанию, если её нет ни в настройках, ни в плейлисте */
 const DEFAULT_EPG = 'http://epg.one/epg2.xml.gz';
 function epgUrl() { return store.get('epg', '') || store.get('epgAuto', '') || DEFAULT_EPG; }
-/* Кэш телепрограммы: приставка не качает большой файл при каждом включении */
-function saveEpgCache(url) {
-  try {
-    const progs = {}; S.epg.forEach((v, k) => { progs[k] = v; });
-    const map = {}; S.channels.forEach(c => { if (c.epgId) map[c.key] = c.epgId; });
-    localStorage.setItem('setvix:epgc', JSON.stringify({ url, ts: Date.now(), progs, map }));
-  } catch (e) { try { localStorage.removeItem('setvix:epgc'); } catch (e2) {} }
+/* Кэш телепрограммы в IndexedDB: приставка не качает большой файл при каждом включении */
+function idb() {
+  if (S._idb) return S._idb;
+  S._idb = new Promise((res, rej) => {
+    try {
+      const r = indexedDB.open('setvix', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('kv');
+      r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+    } catch (e) { rej(e); }
+  });
+  return S._idb;
 }
-function loadEpgCache(url) {
+async function idbSet(k, v) { const db = await idb(); return new Promise((res, rej) => { const t = db.transaction('kv', 'readwrite'); t.objectStore('kv').put(v, k); t.oncomplete = res; t.onerror = () => rej(t.error); }); }
+async function idbGet(k) { const db = await idb(); return new Promise((res, rej) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
+async function saveEpgCache(url) {
   try {
-    const c = JSON.parse(localStorage.getItem('setvix:epgc') || 'null');
-    if (!c || c.url !== url || Date.now() - c.ts > 6 * 3600e3) return false;
-    S.epg = new Map(Object.entries(c.progs));
+    const map = {}, logos = {}; S.channels.forEach(c => { if (c.epgId) map[c.key] = c.epgId; if (c.logo) logos[c.key] = c.logo; });
+    try { localStorage.setItem('setvix:logos', JSON.stringify(logos)); } catch (e) {}
+    await idbSet('epgc', { v: 3, url, ts: Date.now(), epg: S.epg, map });
+  } catch (e) {}
+}
+async function loadEpgCache(url) {
+  try {
+    const c = await idbGet('epgc');
+    if (!c || c.v !== 3 || c.url !== url || Date.now() - c.ts > 6 * 3600e3) return false;
+    S.epg = c.epg instanceof Map ? c.epg : new Map();
     S.channels.forEach(ch => { ch.epgId = c.map[ch.key] || null; });
     S.epgStat = `${S.channels.filter(ch => ch.epgId).length} из ${S.channels.length} каналов с программой (из памяти, ${url})`;
     return true;
   } catch (e) { return false; }
 }
-function startEPG(url, force) {
+async function startEPG(url, force) {
   clearTimeout(S.epgT); S.epgT = setTimeout(() => startEPG(epgUrl(), true), 6 * 3600e3);
-  if (!force && loadEpgCache(url)) { refreshNow(); return; }
+  if (!force && await loadEpgCache(url)) { refreshNow(); return; }
   S.epgLoading = true; S.epgStat = 'загружается: ' + url; refreshNow();
   loadEPG(url).then(() => {
     S.epgLoading = false;
@@ -861,7 +1157,7 @@ function updateOSD() {
   o.querySelector('.osd-num').textContent = ch.num;
   o.querySelector('.osd-name').textContent = ch.name;
   const v = S.vsize && i === S.cur ? S.vsize : null;
-  const q = v && v.h ? (v.h >= 2000 ? '4K' : v.h >= 1000 ? 'Full HD' : v.h >= 700 ? 'HD' : 'SD') : '';
+  const q = v && v.h ? (v.h >= 2000 ? '4K' : v.h >= 1000 ? 'Full HD' : v.h >= 700 ? 'HD' : 'SD') : (ch.variants && ch.variants.length > 1 ? ch.qlabel : '');
   o.querySelector('.osd-group').innerHTML = esc(ch.group) + (q ? `<span class="osd-q">${q}</span>` : '') + (isFav(i) ? '<span class="osd-q">\u2605</span>' : '');
   const arch = S.archive && i === S.cur ? S.archive.prog : null;
   if (arch) {
@@ -873,7 +1169,7 @@ function updateOSD() {
     o.querySelector('.bar i').style.width = nn.now ? pct(nn.now) + '%' : '0';
     o.querySelector('.osd-next').textContent = nn.next ? `Далее в ${tm(nn.next.s)}: ${nn.next.t}` : '';
   }
-  $('#osdHint').textContent = 'OK: каналы. Вправо: звук, картинка, избранное. Назад: главная.';
+  $('#osdHint').textContent = (typeof TOUCH !== 'undefined' && TOUCH) ? 'Свайп влево или вправо: другой канал. Поверните телефон вертикально, чтобы открыть список.' : 'Влево и вправо: каналы. Вниз: управление. Вверх: программа и архив. OK: список.';
 }
 function showOSD(ms = 5000) {
   updateOSD(); if (S.mode !== 'watch') return;
@@ -894,8 +1190,14 @@ function setMode(m) {
   $('#guide').classList.toggle('hidden', m !== 'guide');
   $('#search').classList.toggle('hidden', m !== 'search');
   $('#upd').classList.toggle('hidden', m !== 'upd');
+  $('#gsel').classList.toggle('hidden', m !== 'gsel');
+  $('#ctl').classList.toggle('hidden', m !== 'ctl');
+  $('#prog').classList.toggle('hidden', m !== 'prog');
+  $('#info').classList.toggle('hidden', m !== 'info');
+  if (typeof updateVideoRect === 'function') setTimeout(updateVideoRect, m === 'prog' ? 60 : 0);
   if (m !== 'pair' && S.pair) stopPair();
   if (m !== 'watch') hideOSD();
+  if (m !== 'ctl') clearTimeout(S.ctlT);
 }
 
 /* ---------- Главная ---------- */
@@ -967,6 +1269,8 @@ function updateHero(force) {
   const i = heroIdx(), ch = S.channels[i], el = $('#hero'), body = el.querySelector('.hero-body');
   if (!ch) { body.innerHTML = ''; return; }
   if (force || el.dataset.i !== String(i)) { el.dataset.i = i; el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap'); }
+  const art = $('#heroArt'), nnA = nowNext(ch);
+  if (art) { if (nnA.now && nnA.now.i) { art.style.backgroundImage = `url("${nnA.now.i}")`; art.classList.add('on'); } else art.classList.remove('on'); }
   const nn = nowNext(ch);
   body.innerHTML =
     `<div class="hero-meta"><span class="live">В эфире</span><span>Канал ${ch.num}</span><span>${esc(ch.group)}</span></div>` +
@@ -1040,6 +1344,137 @@ function listKey(k) {
 $('#lgroups').addEventListener('click', e => { const it = e.target.closest('.li'); if (!it) return; S.lf.g = +it.dataset.g; S.lf.c = 0; S.lf.col = 'chans'; renderList(); });
 $('#lchans').addEventListener('click', e => { const it = e.target.closest('.li'); if (!it) return; playAndWatch(S.lgroups[S.lf.g].items[+it.dataset.c]); });
 
+/* ---------- Иконки ---------- */
+const IC = {
+  pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.5.86l10.5-6.5a1 1 0 0 0 0-1.72L9.5 4.64A1 1 0 0 0 8 5.5z"/></svg>',
+  list: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg>',
+  guide: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v16"/></svg>',
+  info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5h.01"/></svg>',
+  star: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z"/></svg>',
+  audio: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 5L6 9H3v6h3l5 4V5zM15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+  aspect: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9V8h2M17 15v1h-2"/></svg>',
+  hd: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9v6M7 12h3M10 9v6M14 9v6h1.5a2.5 2.5 0 0 0 0-5H14"/></svg>',
+  live: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="5"/></svg>',
+  more: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>'
+};
+const hm = ms => { const m = Math.max(0, Math.round(ms / 60000)); return m >= 60 ? `${Math.floor(m / 60)} ч${m % 60 ? ' ' + (m % 60) + ' мин' : ''}` : `${m} мин`; };
+
+/* ---------- Панель управления ---------- */
+function ctlButtons() {
+  const ch = S.channels[S.cur]; const b = [];
+  b.push({ id: 'pp', icon: S.paused ? IC.play : IC.pause, ic: true, act: () => { watchKey('playpause'); renderCtl(); } });
+  b.push({ id: 'list', icon: IC.list, t: 'Каналы', act: () => openList() });
+  b.push({ id: 'prog', icon: IC.guide, t: 'Программа', act: () => openProg() });
+  b.push({ id: 'info', icon: IC.info, ic: true, act: () => openInfo() });
+  b.push({ id: 'fav', icon: IC.star, ic: true, on: isFav(S.cur), act: () => { toggleFav(S.cur); renderCtl(); } });
+  if (S.audio.length > 1) b.push({ id: 'aud', icon: IC.audio, t: 'Звук', act: () => { const o = optItems().find(x => x.t === 'Звук'); if (o) o.act(); setMode('ctl'); renderCtl(); } });
+  b.push({ id: 'ar', icon: IC.aspect, ic: true, act: () => { cycleAspect(); renderCtl(); } });
+  if (S.archive) b.push({ id: 'live', icon: IC.live, t: 'В эфир', act: () => { play(S.cur); setMode('watch'); showOSD(); } });
+  b.push({ id: 'more', icon: IC.more, ic: true, act: () => openOpts() });
+  return b;
+}
+function openCtl() { if (S.cur < 0) return; hideOSD(); S.cf = S.cf || 0; S.crow = 0; setMode('ctl'); renderCtl(); bumpCtl(); }
+function bumpCtl() { clearTimeout(S.ctlT); S.ctlT = setTimeout(() => { if (S.mode === 'ctl') setMode('watch'); }, 9000); }
+function renderCtl() {
+  const ch = S.channels[S.cur]; if (!ch) return;
+  S.cb = ctlButtons(); S.cf = Math.min(S.cf, S.cb.length - 1);
+  const nn = nowNext(ch), arch = S.archive && S.archive.prog, p = arch || nn.now, now = Date.now();
+  $('#ctlLogo').innerHTML = logoBox(ch, 'osd-logo');
+  $('#ctlCh').textContent = `${ch.num}  ${ch.name}${arch ? '  •  Архив' : ''}`;
+  $('#ctlProg').textContent = p ? p.t : (S.epgLoading ? 'Телепрограмма загружается' : 'Прямой эфир');
+  $('#ctlNext').textContent = !arch && nn.next ? `Далее в ${tm(nn.next.s)}: ${nn.next.t}` : (arch ? `${tm(arch.s)}–${tm(arch.e)}` : '');
+  $('#ctlT0').textContent = p ? tm(p.s) : ''; $('#ctlT1').textContent = p ? tm(p.e) : '';
+  $('#ctlBar').style.width = p && !arch ? pct(p) + '%' : '0';
+  $('#ctlLeft').textContent = p && !arch && p.e > now ? `осталось ${hm(p.e - now)}` : '';
+  $('#ctlBtns').innerHTML = S.cb.map((b, i) => `<div class="cb${b.ic ? ' ic' : ''}${b.on ? ' on' : ''}${S.crow === 0 && i === S.cf ? ' sel' : ''}" data-i="${i}">${b.icon}${b.t ? `<span>${esc(b.t)}</span>` : ''}</div>`).join('');
+  S.vchips = varChips(ch); if (!S.vchips.length) S.crow = 0;
+  S.vf = Math.min(S.vf || 0, Math.max(0, S.vchips.length - 1));
+  let last = '';
+  $('#ctlVars').innerHTML = S.vchips.map((c, i) => {
+    const lbl = c.k !== last ? `<span class="vl">${{ q: 'Качество', z: 'Часовой пояс', o: '' }[c.k]}</span>` : ''; last = c.k;
+    return lbl + `<span class="vc${c.on ? ' on' : ''}${c.dim ? ' dim' : ''}${S.crow === 1 && i === S.vf ? ' sel' : ''}" data-i="${i}">${esc(c.t)}</span>`;
+  }).join('');
+  $('#ctlHint').textContent = S.vchips.length ? 'Влево и вправо: выбор. Вниз: версии канала. OK: выбрать. «Назад»: скрыть.' : 'Влево и вправо: кнопки. OK: выбрать. Вверх или «Назад»: скрыть.';
+}
+function ctlKey(k) {
+  bumpCtl();
+  if (k === 'back') { setMode('watch'); return; }
+  if (S.crow === 1) {
+    if (k === 'left') S.vf = Math.max(0, S.vf - 1);
+    else if (k === 'right') S.vf = Math.min(S.vchips.length - 1, S.vf + 1);
+    else if (k === 'up') S.crow = 0;
+    else if (k === 'ok') { const c = S.vchips[S.vf]; if (c) { pickChip(S.cur, c); setTimeout(renderCtl, 50); } return; }
+    renderCtl(); return;
+  }
+  if (k === 'left') S.cf = Math.max(0, S.cf - 1);
+  else if (k === 'right') S.cf = Math.min(S.cb.length - 1, S.cf + 1);
+  else if (k === 'down') { if (S.vchips && S.vchips.length) { S.crow = 1; const on = S.vchips.findIndex(c => c.on); S.vf = on >= 0 ? on : 0; } }
+  else if (k === 'up') { setMode('watch'); return; }
+  else if (k === 'chup' || k === 'chdown') { zap(k === 'chup' ? 1 : -1); setTimeout(renderCtl, 500); }
+  else if (k === 'ok') { const b = S.cb[S.cf]; if (b) b.act(); return; }
+  else if (k === 'playpause') watchKey('playpause');
+  renderCtl();
+}
+$('#ctlVars').addEventListener('click', e => { const it = e.target.closest('.vc'); if (!it) return; const c = S.vchips[+it.dataset.i]; if (c) { pickChip(S.cur, c); setTimeout(renderCtl, 50); } });
+$('#ctlBtns').addEventListener('click', e => { const it = e.target.closest('.cb'); if (!it) return; S.cf = +it.dataset.i; const b = S.cb[S.cf]; if (b) b.act(); });
+
+/* ---------- Программа рядом с видео: «Прямой эфир» и «Архив» ---------- */
+function openProg() {
+  if (S.cur < 0) return;
+  hideOSD(); S.pt = 'live'; S.pi = 0; setMode('prog'); renderProg(true);
+}
+function progItems() {
+  const ch = S.channels[S.cur]; const a = ch && ch.epgId ? S.epg.get(ch.epgId) : null; const now = Date.now();
+  if (!a) return [];
+  if (S.pt === 'live') return a.filter(p => p.e > now).slice(0, 40);
+  return a.filter(p => p.e <= now).slice(-60).reverse();
+}
+function renderProg(reset) {
+  const ch = S.channels[S.cur]; if (!ch) return;
+  document.querySelectorAll('.pg-tabs span').forEach(t => t.classList.toggle('on', t.dataset.t === S.pt));
+  S.pitems = progItems(); if (reset) S.pi = 0; S.pi = Math.min(S.pi, Math.max(0, S.pitems.length - 1));
+  const now = Date.now(); const [a, b] = win(S.pitems.length, S.pi, 7);
+  $('#pgList').innerHTML = S.pitems.length ? S.pitems.slice(a, b).map((p, j) => {
+    const isNow = p.s <= now && now < p.e, can = p.e <= now ? !!archiveUrl(ch, p) : true;
+    const day = new Date(p.s).toDateString() === new Date().toDateString() ? 'Сегодня' : new Date(p.s).toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' });
+    const tag = isNow ? 'Сейчас' : p.e <= now ? (can ? 'Смотреть запись' : 'Нет записи') : day;
+    return `<div class="pg-it${isNow ? ' now' : ''}${!can ? ' na' : ''}${a + j === S.pi ? ' sel' : ''}"><b>${esc(p.t)}</b><small><span><span class="tag">${tag}</span>  ${tm(p.s)}–${tm(p.e)}</span><span>${hm(p.e - p.s)}</span></small></div>`;
+  }).join('') : `<p class="tip" style="padding:1rem">${S.pt === 'arch' && !ch.cu ? 'У этого канала нет архива.' : S.epgLoading ? 'Телепрограмма загружается…' : 'Нет телепрограммы для этого канала.'}</p>`;
+  const sel = S.pitems[S.pi] || nowNext(ch).now;
+  $('#pgCard').innerHTML = `<div class="pc-ch">${logoBox(ch, 'llogo')}<span>${ch.num}. ${esc(ch.name)}${ch.qlabel ? ', ' + esc(ch.qlabel.split(',')[0]) : ''}</span></div>` +
+    (sel ? `<b>${esc(sel.t)}</b><p>${esc(sel.d || (tm(sel.s) + '–' + tm(sel.e)))}</p>` : '<b>Прямой эфир</b>');
+}
+function progKey(k) {
+  if (k === 'back') { setMode('watch'); return; }
+  if (k === 'up') S.pi = Math.max(0, S.pi - 1);
+  else if (k === 'down') S.pi = Math.min(S.pitems.length - 1, S.pi + 1);
+  else if (k === 'left' || k === 'right') { S.pt = k === 'left' ? 'live' : 'arch'; renderProg(true); return; }
+  else if (k === 'chup' || k === 'chdown') { zap(k === 'chup' ? 1 : -1); setTimeout(() => renderProg(true), 600); return; }
+  else if (k === 'ok') {
+    const p = S.pitems[S.pi], now = Date.now(); if (!p) return;
+    if (p.s <= now && now < p.e) { if (S.archive) play(S.cur); setMode('watch'); showOSD(); }
+    else if (p.e <= now) playArchive(S.cur, p);
+    else toast(`Передача начнётся в ${tm(p.s)}`, 2500);
+    return;
+  }
+  renderProg(false);
+}
+
+/* ---------- Информация о передаче и качестве ---------- */
+function openInfo() {
+  const ch = S.channels[S.cur]; if (!ch) return;
+  const nn = nowNext(ch), p = (S.archive && S.archive.prog) || nn.now, v = S.vsize;
+  const q = v && v.h ? `${Math.round(v.w * (v.r || 1))} × ${v.h}` : 'определяется…';
+  const tracks = S.audio.length ? S.audio.map((a, i) => audioName(a, i)).join('; ') : 'одна';
+  $('#infoCard').innerHTML = `<h2>${esc(p ? p.t : ch.name)}</h2><div class="meta">${ch.num}. ${esc(ch.name)}${p ? `, ${tm(p.s)}–${tm(p.e)}` : ''}${S.archive ? ', архив' : ''}</div>` +
+    `<h3>Описание</h3><p>${esc(p && p.d ? p.d : 'Нет описания.')}</p>` +
+    `<h3>Качество</h3><div class="badges"><span>Видео ${q}</span>${ch.qlabel ? `<span>${esc(ch.qlabel)}</span>` : ''}<span>Звук: ${esc(tracks)}</span>${ch.cu ? `<span>Архив ${ch.cuDays} дн.</span>` : ''}</div>` +
+    `<p class="tip" style="margin-top:1.4rem">OK или «Назад»: закрыть</p>`;
+  setMode('info');
+}
+function infoKey(k) { if (k === 'back' || k === 'ok' || k === 'info') setMode('watch'); }
+
 /* ---------- Архив передач (catch-up) ---------- */
 function archiveUrl(ch, p) {
   if (!ch || !ch.cu || !p) return null;
@@ -1086,6 +1521,12 @@ function optItems() {
       try { SetvixNative.selectAudio(n); } catch (e) {}
       S.audio = S.audio.map((a, i) => Object.assign({}, a, { sel: i === n }));
       toast('Звук: ' + audioName(S.audio[n], n), 2500); renderOpts();
+    } });
+  }
+  if (ch.variants && ch.variants.length > 1) {
+    it.push({ t: 'Версия канала', v: ch.qlabel, act: () => {
+      const n = (ch.vi + 1) % ch.variants.length; setVariant(S.cur, n);
+      toast('Версия: ' + ch.qlabel, 2500); play(S.cur); setMode('opts'); renderOpts();
     } });
   }
   const am = AR_MODES.find(x => x.id === arMode());
@@ -1219,6 +1660,38 @@ function searchKey(k) {
 $('#sIn').addEventListener('input', () => { S.sq = $('#sIn').value; S.sf2 = 0; renderSearch(); });
 $('#sRes').addEventListener('click', e => { const it = e.target.closest('.li'); if (!it) return; playAndWatch(S.sres[+it.dataset.j]); });
 
+/* ---------- Выбор групп каналов ---------- */
+function openGroups() {
+  if (!S.raw || !S.raw.length) { setStatus('Сначала загрузите плейлист.', true); return; }
+  const cnt = new Map(); S.raw.forEach(c => { const g = c.group || 'Без группы'; cnt.set(g, (cnt.get(g) || 0) + 1); });
+  S.gsAll = [...cnt.entries()]; S.gsHid = hiddenGroups(); S.gs = 0;
+  setMode('gsel'); renderGroups();
+}
+function renderGroups() {
+  const n = S.gsAll.length; const [a, b] = win(n, S.gs, 9);
+  $('#gselList').innerHTML = S.gsAll.slice(a, b).map(([g, c], j) =>
+    `<div class="li g${a + j === S.gs ? ' sel' : ''}" data-j="${a + j}"><b>${esc(g)}</b><span class="gcount">${c}</span><span class="off">${S.gsHid.has(g) ? 'Скрыто' : 'Показывать'}</span></div>`).join('');
+}
+function gselKey(k) {
+  if (k === 'up') S.gs = Math.max(0, S.gs - 1);
+  else if (k === 'down') S.gs = Math.min(S.gsAll.length - 1, S.gs + 1);
+  else if (k === 'chup') S.gs = Math.max(0, S.gs - 8);
+  else if (k === 'chdown') S.gs = Math.min(S.gsAll.length - 1, S.gs + 8);
+  else if (k === 'ok') { const g = S.gsAll[S.gs][0]; if (S.gsHid.has(g)) S.gsHid.delete(g); else S.gsHid.add(g); }
+  else if (k === 'back') {
+    store.set('hidG', [...S.gsHid]);
+    const curKey = S.channels[S.cur] && S.channels[S.cur].key;
+    setChannels(S.raw); S.epg = S.epg || new Map();
+    startEPG(epgUrl());
+    const i = S.byKey.has(curKey) ? S.byKey.get(curKey) : 0;
+    toast(`Каналов: ${S.channels.length}`, 2500);
+    setMode('watch'); play(i); showOSD(); return;
+  }
+  renderGroups();
+}
+$('#btnGroups').onclick = () => openGroups();
+$('#gselList').addEventListener('click', e => { const it = e.target.closest('.li'); if (!it) return; S.gs = +it.dataset.j; gselKey('ok'); });
+
 /* ---------- Обновление самого приложения ---------- */
 function checkApk() {
   if (S.updShown) return;
@@ -1249,7 +1722,7 @@ $('#updYes').onclick = () => {
 $('#updNo').onclick = () => { setMode(S.updPrev && S.updPrev !== 'upd' ? S.updPrev : 'watch'); };
 
 /* ---------- Настройки ---------- */
-const fEls = () => [$('#btnPair'), $('#inM3u'), $('#inEpg'), $('#btnSave'), $('#btnDemo'), $('#btnClose'), $('#btnDiag')];
+const fEls = () => [$('#btnPair'), $('#inM3u'), $('#inEpg'), $('#btnSave'), $('#btnDemo'), $('#btnClose'), $('#btnDiag'), $('#btnGroups')];
 function openSettings(first) {
   $('#inM3u').value = store.get('m3u', ''); $('#inEpg').value = store.get('epg', '');
   $('#setIntro').textContent = first || !S.channels.length
@@ -1278,7 +1751,7 @@ function setKey(k) {
   if (k === 'up') return settingsMove(-1);
   if (k === 'down') return settingsMove(1);
   if (k === 'left' && S.sf > 3) S.sf--;
-  else if (k === 'right' && S.sf >= 3 && S.sf < 6) S.sf++;
+  else if (k === 'right' && S.sf >= 3 && S.sf < 7) S.sf++;
   else if (k === 'ok') { const el = fEls()[S.sf]; if (el.tagName === 'INPUT') el.focus(); else el.click(); return; }
   renderSettings();
 }
@@ -1455,8 +1928,8 @@ function startDemo() {
   startLast(); toast('Демо-каналы: тестовые потоки для проверки приставки и пульта.');
 }
 function hintOnce() {
-  if (store.get('hinted', false)) return; store.set('hinted', true);
-  setTimeout(() => toast('Вверх и вниз: каналы. OK: список каналов. Вправо: опции. Назад: главная.', 8000), 1500);
+  if (store.get('hinted2', false)) return; store.set('hinted2', true);
+  setTimeout(() => toast('Влево и вправо: каналы. Вниз: управление. Вверх: программа и архив. OK: список каналов.', 9000), 1500);
 }
 async function boot() {
   const p = new URLSearchParams(location.search + '&' + location.hash.slice(1));
@@ -1509,14 +1982,16 @@ function digit(d) {
 }
 function watchKey(k) {
   if (!S.channels.length) return openSettings(true);
-  if (k === 'up' || k === 'chup') zap(1);
-  else if (k === 'down' || k === 'chdown') zap(-1);
+  /* Влево и вправо: каналы. Вниз: панель управления. Вверх: программа и архив. OK: список каналов. */
+  if (k === 'right' || k === 'chup') zap(1);
+  else if (k === 'left' || k === 'chdown') zap(-1);
   else if (k === 'ok') { if (S.muteHint) { video.muted = false; S.muteHint = false; toast('Звук включён', 2000); } else openList(); }
-  else if (k === 'left') openList();
-  else if (k === 'right' || k === 'menu') openOpts();
+  else if (k === 'down') openCtl();
+  else if (k === 'up') openProg();
+  else if (k === 'menu') openOpts();
   else if (k === 'back') { if (S.osdOn) hideOSD(); else openHome(); }
   else if (k === 'guide') openGuide(S.cur);
-  else if (k === 'info') showOSD(8000);
+  else if (k === 'info') openInfo();
   else if (k === 'last') { if (S.prevCh >= 0) playAndWatch(S.prevCh); }
   else if (k === 'playpause') {
     S.paused = !S.paused;
@@ -1540,6 +2015,10 @@ function handle(k, e) {
   else if (S.mode === 'guide') guideKey(k);
   else if (S.mode === 'search') searchKey(k);
   else if (S.mode === 'upd') updKey(k);
+  else if (S.mode === 'gsel') gselKey(k);
+  else if (S.mode === 'ctl') ctlKey(k);
+  else if (S.mode === 'prog') progKey(k);
+  else if (S.mode === 'info') infoKey(k);
 }
 document.addEventListener('keydown', e => {
   if (S.mode === 'link') return;
@@ -1572,9 +2051,10 @@ try {
 
 /* Мышь и касания для проверки с телефона */
 document.addEventListener('click', e => {
-  if (S.mode === 'link' || S.mode === 'pair') return;
-  if (e.target.closest('#home,#list,#settings,#osd,#toast')) return;
+  if (S.mode === 'link' || S.mode === 'pair' || MOB()) return;
+  if (e.target.closest('#home,#list,#settings,#osd,#toast,#mob,#opts,#guide,#search,#upd,#gsel')) return;
   if (S.mode === 'watch') {
+    if (TOUCH) { if (S.osdOn) hideOSD(); else showOSD(6000); return; }
     if (S.muteHint) { video.muted = false; S.muteHint = false; return; }
     if (S.channels.length) openHome(); else openSettings(true);
   }
@@ -1594,6 +2074,8 @@ function refreshNow() {
   }
   if (S.mode === 'list') renderList();
   if (S.mode === 'guide') renderGuide();
+  if (S.mode === 'ctl') renderCtl();
+  if (S.mode === 'prog') renderProg(false);
   if (S.osdOn) updateOSD();
 }
 tick(); setInterval(tick, 10000); setInterval(refreshNow, 30000);
@@ -1621,7 +2103,159 @@ tick(); setInterval(tick, 10000); setInterval(refreshNow, 30000);
   setTimeout(check, 15 * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
 })();
+/* ---------- Телефон и планшет ---------- */
+const TOUCH = (navigator.maxTouchPoints || 0) > 0 && matchMedia('(pointer: coarse)').matches;
+const MOB = () => TOUCH && innerHeight > innerWidth; // вертикально: видео сверху, каналы списком
+S.mt = 'ch'; S.mg = store.get('mg', 'all'); S.mq = ''; S.mlim = 120;
+function applyLayout() {
+  const mob = MOB();
+  document.documentElement.classList.toggle('mobile', TOUCH);
+  document.body.classList.toggle('mob', mob);
+  if (mob && S.mode !== 'settings' && S.mode !== 'upd' && S.mode !== 'gsel' && S.mode !== 'link' && S.mode !== 'pair') { if (S.mode !== 'watch') setMode('watch'); hideOSD(); }
+  updateVideoRect();
+  if (mob) renderMob(true);
+}
+function updateVideoRect() {
+  const inProg = S.mode === 'prog' && !MOB();
+  if (!NATIVE) {
+    if (inProg) { const r = $('#pgVid').getBoundingClientRect(); Object.assign(video.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', zIndex: 6, borderRadius: '1rem' }); }
+    else Object.assign(video.style, { left: '', top: '', width: '', height: '', zIndex: '', borderRadius: '' });
+    return;
+  }
+  if (typeof SetvixNative.setVideoRect !== 'function') return;
+  try {
+    if (inProg) {
+      const r = $('#pgVid').getBoundingClientRect(), d = devicePixelRatio || 1;
+      SetvixNative.setVideoRect(Math.round(r.left * d), Math.round(r.top * d), Math.round(r.width * d), Math.round(r.height * d));
+    } else if (MOB()) {
+      const r = $('#mVideo').getBoundingClientRect(), d = devicePixelRatio || 1;
+      SetvixNative.setVideoRect(Math.round(r.left * d), Math.round(r.top * d), Math.round(r.width * d), Math.round(r.height * d));
+    } else SetvixNative.setVideoRect(0, 0, 0, 0);
+  } catch (e) {}
+}
+addEventListener('resize', () => { clearTimeout(S.lt); S.lt = setTimeout(applyLayout, 120); });
+addEventListener('orientationchange', () => setTimeout(applyLayout, 250));
+
+function mobItems() {
+  const q = S.mq.trim().toLowerCase();
+  let items;
+  if (S.mt === 'fav') items = favList();
+  else if (S.mg === 'all') items = S.channels.map((c, i) => i);
+  else if (S.mg === '__fav') items = favList();
+  else { const g = S.groups.find(x => x.title === S.mg); items = g ? g.items : S.channels.map((c, i) => i); }
+  if (q) items = S.channels.map((c, i) => i).filter(i => S.channels[i].name.toLowerCase().includes(q) || String(S.channels[i].num) === q);
+  return items;
+}
+function mobRow(ci) {
+  const ch = S.channels[ci], nn = nowNext(ch);
+  return `<div class="li${ci === S.cur ? ' playing' : ''}${isFav(ci) ? ' fav' : ''}" data-ci="${ci}"><span class="lnum">${ch.num}</span>${logoBox(ch, 'llogo')}` +
+    `<div class="ltext"><b>${esc(ch.name)}</b><span class="lnow">${esc(nn.now ? nn.now.t : ch.group)}</span>${nn.now ? `<div class="bar"><i style="width:${pct(nn.now)}%"></i></div>` : ''}</div></div>`;
+}
+function renderMobNow() {
+  const ch = S.channels[S.cur];
+  if (!ch) { $('#mNowName').textContent = 'Setvix'; $('#mNowProg').textContent = 'Добавьте плейлист в настройках'; return; }
+  const nn = nowNext(ch), arch = S.archive && S.archive.prog;
+  $('#mNowLogo').innerHTML = logoBox(ch, 'llogo');
+  $('#mNowName').textContent = `${ch.num}. ${ch.name}`;
+  $('#mNowProg').textContent = arch ? `Архив: ${tm(arch.s)} ${arch.t}` : nn.now ? `${tm(nn.now.s)}–${tm(nn.now.e)} ${nn.now.t}` : (ch.qlabel || ch.group);
+  $('#mNowBar').style.width = nn.now && !arch ? pct(nn.now) + '%' : '0';
+  $('#mFav').classList.toggle('on', isFav(S.cur)); $('#mFav').innerHTML = isFav(S.cur) ? '&#9733;' : '&#9734;';
+}
+function renderMob(full) {
+  if (!MOB()) return;
+  renderMobNow();
+  document.querySelectorAll('.m-tabs button').forEach(b => b.classList.toggle('on', b.dataset.t === S.mt));
+  $('#mPaneCh').classList.toggle('hidden', S.mt === 'pg');
+  $('#mPanePg').classList.toggle('hidden', S.mt !== 'pg');
+  if (S.mt === 'pg') return renderMobProg();
+  const chips = [['all', 'Все']].concat(favList().length ? [['__fav', 'Избранное']] : [], S.groups.map(g => [g.title, g.title]));
+  $('#mGroups').style.display = S.mt === 'fav' || S.mq ? 'none' : '';
+  if (full) $('#mGroups').innerHTML = chips.map(([v, t]) => `<button data-g="${esc(v)}" class="${v === S.mg ? 'on' : ''}">${esc(t)}</button>`).join('');
+  const items = mobItems();
+  S.mitems = items; S.mRenderedLen = S.channels.length;
+  const list = $('#mList');
+  list.innerHTML = items.length ? items.slice(0, S.mlim).map(mobRow).join('') : `<p class="tip" style="padding:1rem">${S.mt === 'fav' ? 'Пока пусто. Нажмите звёздочку у канала, чтобы добавить его сюда.' : 'Ничего не найдено.'}</p>`;
+  if (full) list.scrollTop = 0;
+}
+function renderMobProg() {
+  const ch = S.channels[S.cur], box = $('#mProg');
+  const a = ch && ch.epgId ? S.epg.get(ch.epgId) : null;
+  if (!a || !a.length) { box.innerHTML = `<p class="tip" style="padding:1rem">${S.epgLoading ? 'Телепрограмма загружается…' : 'Для этого канала нет телепрограммы.'}</p>`; return; }
+  const now = Date.now(); let day = '', html = '';
+  a.filter(p => p.e > now - (ch.cu ? (ch.cuDays || 3) * 86400e3 : 3 * 3600e3)).forEach((p, j) => {
+    const d = new Date(p.s).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+    if (d !== day) { day = d; html += `<div class="m-day">${esc(d)}</div>`; }
+    const cls = p.s <= now && now < p.e ? 'now' : p.e <= now ? (archiveUrl(ch, p) ? 'arch' : 'past') : '';
+    html += `<div class="m-p ${cls}" data-s="${p.s}"><time>${tm(p.s)}</time><div><b>${esc(p.t)}</b>${p.d && cls === 'now' ? `<small>${esc(p.d)}</small>` : ''}</div></div>`;
+  });
+  box.innerHTML = html;
+  const nowEl = box.querySelector('.m-p.now'); if (nowEl) box.scrollTop = Math.max(0, nowEl.offsetTop - box.offsetTop - 80);
+}
+function openMobSheet() {
+  const skip = new Set(['Телепрограмма', 'Все каналы', 'Поиск канала']);
+  S.optIt = optItems().filter(o => !skip.has(o.t));
+  const chips = varChips(S.channels[S.cur]); S.mchips = chips; let last = '';
+  $('#mSheetIn').innerHTML = (chips.length ? '<div class="ctl-vars m-vars">' + chips.map((c, i) => {
+      const lbl = c.k !== last ? `<span class="vl">${{ q: 'Качество', z: 'Часовой пояс', o: '' }[c.k]}</span>` : ''; last = c.k;
+      return lbl + `<span class="vc${c.on ? ' on' : ''}" data-c="${i}">${esc(c.t)}</span>`; }).join('') + '</div>' : '') +
+    S.optIt.filter(o => o.t !== 'Версия канала').map(o => `<div class="opt" data-i="${S.optIt.indexOf(o)}">${esc(o.t)}${o.v ? `<span>${esc(o.v)}</span>` : ''}</div>`).join('');
+  $('#mSheet').classList.remove('hidden');
+}
+$('#mSheet').addEventListener('click', e => {
+  const vc = e.target.closest('.vc');
+  if (vc) { const c = S.mchips[+vc.dataset.c]; if (c) { pickChip(S.cur, c); setTimeout(() => { openMobSheet(); renderMobNow(); }, 60); } return; }
+  const it = e.target.closest('.opt');
+  if (!it) { $('#mSheet').classList.add('hidden'); return; }
+  const o = S.optIt[+it.dataset.i]; if (o) o.act();
+  setTimeout(() => { if (S.mode === 'watch' || S.mode === 'opts') { setMode('watch'); openMobSheet(); } renderMobNow(); }, 50);
+});
+$('#mOpt').onclick = () => { if (S.cur >= 0) openMobSheet(); };
+$('#mFav').onclick = () => { if (S.cur >= 0) { toggleFav(S.cur); renderMob(true); } };
+document.querySelectorAll('.m-tabs button').forEach(b => b.onclick = () => {
+  if (b.dataset.t === 'set') { openSettings(); return; }
+  S.mt = b.dataset.t; S.mlim = 120; renderMob(true);
+});
+$('#mGroups').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.mg = b.dataset.g; store.set('mg', S.mg); S.mlim = 120; renderMob(true); });
+$('#mSearch').addEventListener('input', () => { S.mq = $('#mSearch').value; S.mlim = 120; renderMob(false); $('#mGroups').style.display = S.mq ? 'none' : ''; });
+$('#mList').addEventListener('click', e => { const it = e.target.closest('.li'); if (!it) return; const ci = +it.dataset.ci; play(ci); renderMob(false); });
+$('#mList').addEventListener('scroll', () => {
+  const l = $('#mList');
+  if (l.scrollTop + l.clientHeight > l.scrollHeight - 400 && S.mitems && S.mlim < S.mitems.length) {
+    const from = S.mlim; S.mlim += 120;
+    l.insertAdjacentHTML('beforeend', S.mitems.slice(from, S.mlim).map(mobRow).join(''));
+  }
+});
+$('#mProg').addEventListener('click', e => {
+  const it = e.target.closest('.m-p'); if (!it) return;
+  const ch = S.channels[S.cur]; const p = (S.epg.get(ch.epgId) || []).find(x => x.s === +it.dataset.s); if (!p) return;
+  const now = Date.now();
+  if (p.s <= now && now < p.e) { play(S.cur); }
+  else if (p.e <= now) { playArchive(S.cur, p); setMode('watch'); }
+  else toast(`Передача начнётся в ${tm(p.s)}`, 2500);
+  setTimeout(renderMobNow, 100);
+});
+
+/* Повёрнутый телефон: видео на весь экран, свайп вверх/вниз переключает каналы */
+document.addEventListener('touchstart', e => { const t = e.touches[0]; S.ts0 = { x: t.clientX, y: t.clientY, at: Date.now() }; }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (!S.ts0 || MOB() || S.mode !== 'watch') return;
+  const t = e.changedTouches[0], dx = t.clientX - S.ts0.x, dy = t.clientY - S.ts0.y;
+  if (Date.now() - S.ts0.at > 700) return;
+  if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) { zap(dx < 0 ? 1 : -1); e.preventDefault(); }
+  else if (Math.abs(dy) > 70 && Math.abs(dy) > Math.abs(dx) * 1.5) { if (dy < 0) openCtl(); else openProg(); e.preventDefault(); }
+}, { passive: false });
+
+/* Обновлять телефонный экран вместе с остальным */
+const _origPlay = play;
+play = function (...a) { _origPlay.apply(this, a); if (MOB()) setTimeout(() => { if (S.mRenderedLen !== S.channels.length) renderMob(true); else { renderMobNow(); document.querySelectorAll('#mList .li').forEach(el => el.classList.toggle('playing', +el.dataset.ci === S.cur)); } }, 0); };
+setInterval(() => { if (MOB()) renderMobNow(); }, 30000);
+const _origRefresh = refreshNow;
+refreshNow = function () { _origRefresh(); if (MOB()) { renderMobNow(); if (S.mt === 'pg') renderMobProg(); } };
+const _origClose = closeSettings;
+closeSettings = function () { _origClose(); if (MOB()) applyLayout(); };
+
 boot();
+applyLayout();
 </script>
 </body>
 </html>
