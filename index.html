@@ -435,6 +435,25 @@ body.mob #ctl{display:none!important}
 @keyframes spIn{from{opacity:0;transform:translateY(1.2rem) scale(.96);filter:blur(6px)}}
 @keyframes spDot{50%{transform:scale(1.5);opacity:.6}}
 
+/* ---------- Праздничные сюрпризы ---------- */
+#fx{position:fixed;inset:0;z-index:8;pointer-events:none;overflow:hidden}
+#fx canvas{position:absolute;inset:0;width:100%;height:100%}
+.fx-fly{position:absolute;left:0;top:0;will-change:transform}
+.fx-bob{animation:fxBob 1.6s ease-in-out infinite}
+.fx-wing{transform-origin:50% 40%;animation:fxFlap .22s ease-in-out infinite alternate}
+@keyframes fxFlap{to{transform:scaleY(.35)}}
+@keyframes fxBob{50%{transform:translateY(-1.4rem)}}
+@keyframes fxAcross{from{transform:translate(-12vw,var(--y0))}to{transform:translate(112vw,var(--y1))}}
+@keyframes fxGhost{0%{transform:translate(0,20vh) scale(.8);opacity:0}15%{opacity:.92}50%{transform:translate(-4vw,-8vh) scale(1)}85%{opacity:.85}100%{transform:translate(3vw,-40vh) scale(1.05);opacity:0}}
+@keyframes fxSway{50%{transform:rotate(6deg) translateX(1rem)}}
+@keyframes fxPeek{0%,100%{transform:translateY(110%)}18%,82%{transform:translateY(8%)}}
+@keyframes fxGlow{0%,100%{opacity:.75}50%{opacity:1}53%{opacity:.4}56%{opacity:1}}
+@keyframes fxWink{0%,60%,64%,100%{transform:scaleY(1)}62%{transform:scaleY(.1)}}
+@keyframes fxDrop{0%,100%{transform:translateY(-100%)}25%,70%{transform:translateY(0)}}
+@keyframes fxWiggle{50%{transform:rotate(8deg)}}
+@keyframes fxSleigh{from{transform:translate(-30vw,18vh) rotate(-6deg)}to{transform:translate(115vw,4vh) rotate(-6deg)}}
+@keyframes fxSpark{to{transform:translateY(2rem);opacity:0}}
+
 /* Сообщения */
 #toast{position:fixed;z-index:7;top:2.4rem;left:50%;transform:translate(-50%,-1rem);max-width:62rem;background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
   border:1px solid var(--line);padding:1rem 1.6rem;border-radius:1rem;font-size:1.15rem;font-weight:600;line-height:1.4;text-align:center;opacity:0;visibility:hidden;transition:opacity .3s,transform .3s,visibility .3s}
@@ -497,6 +516,7 @@ body.mob #ctl{display:none!important}
       <button id="btnDiag">Проверить канал</button>
       <button id="btnGroups">Группы каналов</button>
       <button id="btnAutoQ"></button>
+      <button id="btnFx"></button>
     </div>
     <p id="setStatus" class="status"></p>
     <p class="tip">Пульт: стрелки двигают выбор, OK открывает поле или нажимает кнопку. <span id="verLabel"></span></p>
@@ -631,6 +651,7 @@ body.mob #ctl{display:none!important}
 </section>
 
 <div id="splash"><b>Setvix<i></i></b><p id="splashMsg">Загружаю каналы</p></div>
+<div id="fx"></div>
 <div id="toast"></div>
 <div id="numpad" class="hidden"></div>
 
@@ -639,7 +660,7 @@ body.mob #ctl{display:none!important}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '3.0'; // меняется с каждой новой версией
+const BUILD = '3.0.1'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
@@ -1676,6 +1697,91 @@ function renderWeather() {
 }
 setTimeout(loadWeather, 2500); setInterval(loadWeather, 20 * 60000);
 
+/* ---------- Праздничные сюрпризы: изредка и неожиданно ---------- */
+function season(d = new Date()) {
+  const m = d.getMonth() + 1, day = d.getDate();
+  if (m === 10 || (m === 11 && day === 1)) return 'halloween';
+  if ((m === 12 && day >= 15) || (m === 1 && day <= 14)) return 'newyear';
+  return null;
+}
+const fxOn = () => store.get('fx', true) && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+function fxAdd(html, ms) { const d = document.createElement('div'); d.innerHTML = html; const el = d.firstElementChild; $('#fx').appendChild(el); setTimeout(() => el.remove(), ms); return el; }
+const BAT = '<svg viewBox="0 0 100 50" width="100%" height="100%"><g class="fx-wing" fill="#0d0d12" stroke="rgba(170,180,210,.55)" stroke-width="1.2"><path d="M50 22c-4-6-10-9-18-8 2 3 1 6-2 7-4-4-11-4-17 1 5 1 8 4 8 8-5-2-11-1-15 3 10 0 22 3 30 8 4 2 8 4 14 4s10-2 14-4c8-5 20-8 30-8-4-4-10-5-15-3 0-4 3-7 8-8-6-5-13-5-17-1-3-1-4-4-2-7-8-1-14 2-18 8z"/></g><circle cx="46" cy="24" r="1.4" fill="#ffb347"/><circle cx="54" cy="24" r="1.4" fill="#ffb347"/></svg>';
+function fxBats() {
+  const n = 5 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < n; i++) {
+    const w = 3 + Math.random() * 4, dur = 7 + Math.random() * 5, dl = Math.random() * 3, y0 = 10 + Math.random() * 45, y1 = y0 + (Math.random() * 30 - 15);
+    fxAdd(`<div class="fx-fly" style="width:${w}rem;height:${w / 2}rem;--y0:${y0}vh;--y1:${y1}vh;animation:fxAcross ${dur}s linear ${dl}s both"><div class="fx-bob" style="width:100%;height:100%;animation-delay:${-Math.random() * 2}s">${BAT}</div></div>`, (dur + dl) * 1000 + 300);
+  }
+}
+function fxGhost() {
+  const x = 55 + Math.random() * 30;
+  fxAdd(`<div class="fx-fly" style="left:${x}vw;top:55vh;width:9rem;animation:fxGhost 9s ease-in-out both"><div style="animation:fxSway 2.2s ease-in-out infinite">
+    <svg viewBox="0 0 100 120" width="100%"><defs><radialGradient id="gg" cx="50%" cy="35%"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#dfe6f5"/></radialGradient></defs>
+    <path d="M50 5C25 5 12 25 12 50v55l12-10 13 12 13-12 13 12 13-12 12 10V50C88 25 75 5 50 5z" fill="url(#gg)" opacity=".93"/>
+    <ellipse cx="38" cy="48" rx="6" ry="9" fill="#1a1f2e" style="transform-origin:38px 48px;animation:fxWink 3s infinite"/><ellipse cx="62" cy="48" rx="6" ry="9" fill="#1a1f2e"/><ellipse cx="50" cy="70" rx="7" ry="5" fill="#1a1f2e"/></svg></div></div>`, 9300);
+}
+function fxPumpkin() {
+  const left = Math.random() < .5;
+  fxAdd(`<div style="position:absolute;bottom:0;${left ? 'left:5vw' : 'right:5vw'};width:14rem;height:12rem;overflow:hidden"><div style="position:absolute;inset:0;animation:fxPeek 7s cubic-bezier(.3,.7,.3,1) both">
+    <svg viewBox="0 0 140 120" width="100%" height="100%"><path d="M70 22c4-10 12-16 20-14-6 3-10 8-12 14z" fill="#3f6b2a"/>
+    <ellipse cx="45" cy="72" rx="30" ry="40" fill="#e8741c"/><ellipse cx="95" cy="72" rx="30" ry="40" fill="#e8741c"/><ellipse cx="70" cy="72" rx="32" ry="44" fill="#f28a2b"/>
+    <g fill="#ffd34d" style="animation:fxGlow 1.8s infinite"><path d="M46 58l12 14H34z"/><path d="M94 58l12 14H82z"/><path d="M40 86q30 22 60 0l-8 10-8-6-7 8-7-8-7 8-7-8-8 6z"/></g></svg></div></div>`, 7200);
+}
+function fxSpider() {
+  const x = 15 + Math.random() * 70;
+  fxAdd(`<div style="position:absolute;left:${x}vw;top:0;height:42vh;width:5rem;animation:fxDrop 8s ease-in-out both">
+    <div style="position:absolute;left:50%;top:0;bottom:2.4rem;width:1px;background:rgba(255,255,255,.55)"></div>
+    <svg viewBox="0 0 60 50" style="position:absolute;bottom:0;left:0;width:5rem;animation:fxWiggle .8s ease-in-out infinite;filter:drop-shadow(0 0 .3rem rgba(255,255,255,.35))"><g stroke="#111" stroke-width="2.4" fill="none" stroke-linecap="round"><path d="M22 24L6 14M22 28L4 28M22 32L6 42M24 36L12 48M38 24L54 14M38 28L56 28M38 32L54 42M36 36L48 48"/></g><ellipse cx="30" cy="30" rx="10" ry="12" fill="#111"/><circle cx="26" cy="27" r="2" fill="#f33"/><circle cx="34" cy="27" r="2" fill="#f33"/></svg></div>`, 8200);
+}
+function fxCanvas(ms, step) {
+  const c = document.createElement('canvas'); $('#fx').appendChild(c);
+  const ctx = c.getContext('2d'), dpr = Math.min(2, devicePixelRatio || 1);
+  const fit = () => { c.width = innerWidth * dpr; c.height = innerHeight * dpr; }; fit();
+  const t0 = performance.now(); let raf;
+  const loop = now => { const t = now - t0; ctx.clearRect(0, 0, c.width, c.height); const fade = Math.min(1, t / 2500, (ms - t) / 2500); ctx.globalAlpha = Math.max(0, fade); step(ctx, c.width, c.height, t, dpr); if (t < ms) raf = requestAnimationFrame(loop); else c.remove(); };
+  raf = requestAnimationFrame(loop);
+}
+function fxSnow(ms = 28000) {
+  const flakes = Array.from({ length: 140 }, () => ({ x: Math.random(), y: Math.random() * -1, r: .6 + Math.random() * 2.4, v: .00025 + Math.random() * .0005, w: Math.random() * 6.28 }));
+  fxCanvas(ms, (ctx, W, H, t, dpr) => {
+    ctx.fillStyle = '#fff';
+    flakes.forEach(f => { f.y += f.v * 16; f.w += .02; if (f.y > 1.05) { f.y = -.05; f.x = Math.random(); } const x = (f.x + Math.sin(f.w) * .01) * W, y = f.y * H; ctx.beginPath(); ctx.arc(x, y, f.r * dpr * 1.4, 0, 6.29); ctx.fill(); });
+  });
+}
+function fxFireworks(ms = 30000) {
+  let parts = [], next = 0; const cols = ['#ffd34d', '#ff5a5f', '#6fb4ff', '#9dff8a', '#ff9de2', '#fff'];
+  fxCanvas(ms, (ctx, W, H, t, dpr) => {
+    if (t > next && t < ms - 3000) { next = t + 500 + Math.random() * 900; const cx = W * (.15 + Math.random() * .7), cy = H * (.15 + Math.random() * .4), col = cols[Math.floor(Math.random() * cols.length)];
+      for (let i = 0; i < 70; i++) { const a = Math.random() * 6.29, sp = (1 + Math.random() * 3.5) * dpr; parts.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, l: 1, c: col }); } }
+    parts = parts.filter(p => p.l > 0);
+    parts.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .04 * dpr; p.vx *= .985; p.vy *= .985; p.l -= .012; ctx.globalAlpha = Math.max(0, p.l); ctx.fillStyle = p.c; ctx.shadowColor = p.c; ctx.shadowBlur = 8 * dpr; ctx.beginPath(); ctx.arc(p.x, p.y, 1.8 * dpr, 0, 6.29); ctx.fill(); });
+  });
+}
+function fxSleigh() {
+  fxAdd(`<div class="fx-fly" style="width:26rem;animation:fxSleigh 11s linear both"><svg viewBox="0 0 260 60" width="100%"><g fill="#e8edf8" opacity=".92">
+    <path d="M10 38c8-2 14-8 18-14l4 2-2 6 8 2 6-8 4 2-3 8c6 2 10 6 12 10H18c-4 0-8-2-8-8z"/><path d="M70 38c8-2 14-8 18-14l4 2-2 6 8 2 6-8 4 2-3 8c6 2 10 6 12 10H78c-4 0-8-2-8-8z"/>
+    <path d="M150 30h70c8 0 12 6 10 14h-8l-4 6h-66c-6 0-8-4-6-8l4-12z"/><circle cx="196" cy="20" r="7" fill="#ff5a5f"/><path d="M188 26h16l4 6h-24z" fill="#ff5a5f"/></g>
+    <path d="M124 40h26" stroke="#e8edf8" stroke-width="1.5"/></svg></div>`, 11300);
+}
+const FX = { halloween: [fxBats, fxBats, fxGhost, fxPumpkin, fxSpider], newyear: [fxSnow, fxSnow, fxSleigh, fxSnow] };
+function fxRandom(force) {
+  const se = force || season(); if (!se || !FX[se]) return;
+  const list = FX[se]; list[Math.floor(Math.random() * list.length)]();
+}
+function fxSchedule() {
+  clearTimeout(S.fxT);
+  const d = new Date(), peak = (d.getMonth() === 9 && d.getDate() === 31) || (d.getMonth() === 11 && d.getDate() >= 30) || (d.getMonth() === 0 && d.getDate() === 1);
+  const mins = peak ? 8 + Math.random() * 8 : 20 + Math.random() * 25;
+  S.fxT = setTimeout(() => { if (fxOn() && !document.hidden && (S.mode === 'watch' || S.mode === 'home')) fxRandom(); fxSchedule(); }, mins * 60000);
+}
+/* Новогодняя полночь: салют */
+setInterval(() => { const d = new Date(); if (fxOn() && d.getMonth() === 0 && d.getDate() === 1 && d.getHours() === 0 && d.getMinutes() === 0 && !S.nyDone) { S.nyDone = true; fxFireworks(55000); toast('С Новым годом!', 8000); } }, 20000);
+setTimeout(() => { if (fxOn() && season()) { fxRandom(); } fxSchedule(); }, 45000 + Math.random() * 45000);
+function fxLabel() { $('#btnFx').textContent = 'Праздничные сюрпризы: ' + (store.get('fx', true) ? 'вкл' : 'выкл'); }
+$('#btnFx').onclick = () => { store.set('fx', !store.get('fx', true)); fxLabel(); if (store.get('fx', true)) fxRandom(season() || 'halloween'); };
+fxLabel();
+
 /* ---------- Архив передач (catch-up) ---------- */
 function archiveUrl(ch, p) {
   if (!ch || !ch.cu || !p) return null;
@@ -1926,7 +2032,7 @@ $('#updYes').onclick = () => {
 $('#updNo').onclick = () => { setMode(S.updPrev && S.updPrev !== 'upd' ? S.updPrev : 'watch'); };
 
 /* ---------- Настройки ---------- */
-const fEls = () => [$('#btnPair'), $('#inM3u'), $('#inEpg'), $('#btnSave'), $('#btnDemo'), $('#btnClose'), $('#btnDiag'), $('#btnGroups'), $('#btnAutoQ')];
+const fEls = () => [$('#btnPair'), $('#inM3u'), $('#inEpg'), $('#btnSave'), $('#btnDemo'), $('#btnClose'), $('#btnDiag'), $('#btnGroups'), $('#btnAutoQ'), $('#btnFx')];
 function openSettings(first) {
   hideSplash();
   $('#inM3u').value = store.get('m3u', ''); $('#inEpg').value = store.get('epg', '');
@@ -1956,7 +2062,7 @@ function setKey(k) {
   if (k === 'up') return settingsMove(-1);
   if (k === 'down') return settingsMove(1);
   if (k === 'left' && S.sf > 3) S.sf--;
-  else if (k === 'right' && S.sf >= 3 && S.sf < 8) S.sf++;
+  else if (k === 'right' && S.sf >= 3 && S.sf < 9) S.sf++;
   else if (k === 'ok') { const el = fEls()[S.sf]; if (el.tagName === 'INPUT') el.focus(); else el.click(); return; }
   renderSettings();
 }
