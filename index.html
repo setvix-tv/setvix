@@ -166,6 +166,12 @@ body.m-list #shade{opacity:1;background:linear-gradient(90deg,rgba(12,20,36,.96)
 .link-sheet .field input{font-size:16px}
 #link .btns button{font-size:16px;padding:1rem 1.6rem}
 
+.diag{white-space:pre-wrap;word-break:break-all;font:600 .95rem/1.45 var(--sans);color:var(--text);margin-top:.8rem;max-height:16rem;overflow:hidden}
+.diag:empty{display:none}
+
+.osd-hint{color:var(--amber);font-size:.95rem;font-weight:600;margin-top:.5rem}
+#video{transition:transform .25s}
+
 /* Сообщения */
 #toast{position:fixed;z-index:7;top:2.4rem;left:50%;transform:translate(-50%,-1rem);max-width:62rem;background:var(--panel);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);
   border:1px solid var(--line);padding:1rem 1.6rem;border-radius:1rem;font-size:1.15rem;font-weight:600;line-height:1.4;text-align:center;opacity:0;visibility:hidden;transition:opacity .3s,transform .3s,visibility .3s}
@@ -204,6 +210,7 @@ body.m-list #shade{opacity:1;background:linear-gradient(90deg,rgba(12,20,36,.96)
     <p class="osd-now"></p>
     <div class="bar"><i></i></div>
     <p class="osd-next"></p>
+    <p class="osd-hint" id="osdHint"></p>
   </div>
   <div class="osd-clock"></div>
 </section>
@@ -220,9 +227,11 @@ body.m-list #shade{opacity:1;background:linear-gradient(90deg,rgba(12,20,36,.96)
       <button id="btnSave">Сохранить и загрузить</button>
       <button id="btnDemo">Демо-каналы</button>
       <button id="btnClose">Закрыть</button>
+      <button id="btnDiag">Проверить канал</button>
     </div>
     <p id="setStatus" class="status"></p>
-    <p class="tip">Пульт: стрелки двигают выбор, OK открывает поле или нажимает кнопку. Адреса можно передать сразу в ссылке: ваш-сайт/?m3u=адрес&amp;epg=адрес</p>
+    <p class="tip">Пульт: стрелки двигают выбор, OK открывает поле или нажимает кнопку. <span id="verLabel"></span></p>
+    <pre id="diagOut" class="diag"></pre>
   </div>
 </section>
 
@@ -261,7 +270,7 @@ body.m-list #shade{opacity:1;background:linear-gradient(90deg,rgba(12,20,36,.96)
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '2026-10-10-7'; // меняется с каждой новой версией
+const BUILD = '2026-10-10-10'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 
@@ -456,10 +465,20 @@ async function loadEPG(url) {
   S.epg = epg;
   S.channels.forEach(c => { c.epgId = (c.tvgId && epg.has(c.tvgId)) ? c.tvgId : (nameToId.get(norm(c.tvgName)) || nameToId.get(norm(c.name)) || null); });
 }
+/* Телепрограмма по умолчанию, если её нет ни в настройках, ни в плейлисте */
+const DEFAULT_EPG = 'http://epg.one/epg2.xml.gz';
+function epgUrl() { return store.get('epg', '') || store.get('epgAuto', '') || DEFAULT_EPG; }
 function startEPG(url) {
-  S.epgLoading = true; refreshNow();
-  loadEPG(url).then(() => { S.epgLoading = false; refreshNow(); })
-    .catch(() => { S.epgLoading = false; refreshNow(); toast('Телепрограмма не загрузилась. Каналы работают и без неё.'); });
+  S.epgLoading = true; S.epgStat = 'загружается: ' + url; refreshNow();
+  loadEPG(url).then(() => {
+    S.epgLoading = false;
+    const n = S.channels.filter(c => c.epgId).length;
+    S.epgStat = `${n} из ${S.channels.length} каналов с программой (${url})`;
+    refreshNow();
+  }).catch(err => {
+    S.epgLoading = false; S.epgStat = 'ошибка: ' + (err && err.message || err) + ' (' + url + ')'; refreshNow();
+    toast('Телепрограмма не загрузилась. Каналы работают и без неё.');
+  });
 }
 function nowNext(ch) {
   const a = ch && ch.epgId ? S.epg.get(ch.epgId) : null; if (!a) return {};
@@ -550,6 +569,7 @@ function attachHls(url, gen, failOnce) {
   S.hls = h; let recovered = false;
   h.on(Hls.Events.ERROR, (ev, d) => {
     if (!d.fatal || gen !== S.gen) return;
+    S.lastErr = 'HLS ' + d.details + (d.response && d.response.code != null ? ' ' + d.response.code : '');
     if (d.type === Hls.ErrorTypes.MEDIA_ERROR && !recovered) { recovered = true; h.recoverMediaError(); return; }
     try { h.destroy(); } catch (e) {}
     if (S.hls === h) S.hls = null;
@@ -566,8 +586,9 @@ async function attachTs(url, gen, failOnce) {
     const p = mpegts.createPlayer({ type: 'mpegts', isLive: true, url: APP ? viaApp(url) : url },
       { enableWorker: true, lazyLoad: false, liveBufferLatencyChasing: true, autoCleanupSourceBuffer: true });
     S.ts = p;
-    p.on(mpegts.Events.ERROR, () => {
+    p.on(mpegts.Events.ERROR, (type, detail, info) => {
       if (gen !== S.gen) return;
+      S.lastErr = 'TS ' + type + ' ' + (detail || '') + (info && info.code ? ' ' + info.code : '');
       try { p.destroy(); } catch (e) {}
       if (S.ts === p) S.ts = null;
       if (S.playing && !S.retried) { S.retried = true; S.playing = false; showLoader(''); armWatchdog(gen); attachTs(url, gen, failOnce); return; }
@@ -585,7 +606,7 @@ function attach(attempt, gen, onFail) {
     onFail();
   };
   clearTimeout(S.attT);
-  S.attT = setTimeout(() => { if (gen === S.gen && !S.playing) failOnce(); }, 14000);
+  S.attT = setTimeout(() => { if (gen === S.gen && !S.playing) { S.lastErr = (attempt.engine === 'ts' ? 'TS' : 'HLS') + ' нет картинки за 14 с'; failOnce(); } }, 14000);
   const { url, engine } = attempt;
   if (/\.(mp4|webm|m4v)(\?|#|$)/i.test(url)) { video.onerror = failOnce; video.src = url; tryPlay(); return; }
   if (engine === 'ts') attachTs(url, gen, failOnce); else attachHls(url, gen, failOnce);
@@ -612,9 +633,35 @@ function fail(idx, gen) {
   S.failStreak++;
   if (S.failStreak >= 6) { toast('Подряд не открылись 6 каналов. Проверьте интернет или ссылку на плейлист в настройках.', 9000); return; }
   const http = !APP && location.protocol === 'https:' && /^http:/i.test(ch.url);
-  toast(`«${ch.name}» сейчас не показывает${http ? ': канал идёт по http, а браузер блокирует такие потоки на защищённом сайте' : ''}. Включаю следующий.`, 5000);
+  toast(`«${ch.name}» сейчас не показывает${http ? ': канал идёт по http, а браузер блокирует такие потоки на защищённом сайте' : ''}. Включаю следующий.${S.lastErr ? ' [' + S.lastErr + ']' : ''}`, 6000);
   S.failT = setTimeout(() => { if (S.cur === idx) { play((idx + 1) % S.channels.length, true); if (S.mode === 'watch') showOSD(); } }, 2500);
 }
+/* Размер картинки: авто подгоняет старые каналы 4:3 под весь экран; вручную можно выбрать режим, он запоминается для канала */
+const AR_MODES = [
+  { id: 'auto', name: 'Авто' },
+  { id: 'fill', name: 'Растянуть на весь экран' },
+  { id: 'cover', name: 'Увеличить' },
+  { id: 'zoom', name: 'Увеличить сильнее' },
+  { id: 'contain', name: 'Как в эфире' }
+];
+function arMode() { const ch = S.channels[S.cur]; return (ch && store.get('ar:' + ch.key, '')) || 'auto'; }
+function applyAspect() {
+  const m = arMode(); let fit = 'contain', scale = 1;
+  if (m === 'auto') { const r = video.videoWidth / (video.videoHeight || 1); fit = r && r < 1.5 ? 'fill' : 'contain'; }
+  else if (m === 'fill') fit = 'fill';
+  else if (m === 'cover') fit = 'cover';
+  else if (m === 'zoom') { fit = 'fill'; scale = 1.2; }
+  video.style.objectFit = fit; video.style.transform = scale !== 1 ? `scale(${scale})` : '';
+}
+function cycleAspect() {
+  const ch = S.channels[S.cur]; if (!ch) return;
+  const i = AR_MODES.findIndex(x => x.id === arMode());
+  const nx = AR_MODES[(i + 1) % AR_MODES.length];
+  store.set('ar:' + ch.key, nx.id); applyAspect();
+  toast('Картинка: ' + nx.name, 2500); showOSD(6000);
+}
+video.addEventListener('loadedmetadata', applyAspect);
+video.addEventListener('resize', applyAspect);
 video.addEventListener('playing', () => { S.playing = true; S.failStreak = 0; clearTimeout(S.wd); hideLoader(); document.body.classList.remove('idle'); });
 video.addEventListener('waiting', () => { if (S.playing) showLoader(''); });
 
@@ -638,6 +685,8 @@ function updateOSD() {
   o.querySelector('.osd-now').innerHTML = nn.now ? `<small>${tm(nn.now.s)}–${tm(nn.now.e)}</small>${esc(nn.now.t)}` : `<small>Прямой эфир</small>${S.epgLoading ? 'Телепрограмма загружается' : ''}`;
   o.querySelector('.bar i').style.width = nn.now ? pct(nn.now) + '%' : '0';
   o.querySelector('.osd-next').textContent = nn.next ? `Далее в ${tm(nn.next.s)}: ${nn.next.t}` : '';
+  const am = AR_MODES.find(x => x.id === arMode());
+  $('#osdHint').textContent = `Вправо ещё раз: размер картинки (сейчас: ${am ? am.name : 'Авто'})`;
 }
 function showOSD(ms = 5000) {
   updateOSD(); if (S.mode !== 'watch') return;
@@ -800,7 +849,7 @@ $('#lgroups').addEventListener('click', e => { const it = e.target.closest('.li'
 $('#lchans').addEventListener('click', e => { const it = e.target.closest('.li'); if (!it) return; playAndWatch(S.lgroups[S.lf.g].items[+it.dataset.c]); });
 
 /* ---------- Настройки ---------- */
-const fEls = () => [$('#btnPair'), $('#inM3u'), $('#inEpg'), $('#btnSave'), $('#btnDemo'), $('#btnClose')];
+const fEls = () => [$('#btnPair'), $('#inM3u'), $('#inEpg'), $('#btnSave'), $('#btnDemo'), $('#btnClose'), $('#btnDiag')];
 function openSettings(first) {
   $('#inM3u').value = store.get('m3u', ''); $('#inEpg').value = store.get('epg', '');
   $('#setIntro').textContent = first || !S.channels.length
@@ -809,6 +858,7 @@ function openSettings(first) {
   S.sf = store.get('m3u', '') ? 3 : 0;
   const auto = store.get('epgAuto', '');
   setStatus(auto && !store.get('epg', '') ? 'Телепрограмма подключена из плейлиста автоматически.' : '');
+  $('#verLabel').textContent = 'Версия ' + BUILD + '.'; $('#diagOut').textContent = '';
   setMode('settings'); renderSettings();
 }
 function renderSettings() {
@@ -828,7 +878,7 @@ function setKey(k) {
   if (k === 'up') return settingsMove(-1);
   if (k === 'down') return settingsMove(1);
   if (k === 'left' && S.sf > 3) S.sf--;
-  else if (k === 'right' && S.sf >= 3 && S.sf < 5) S.sf++;
+  else if (k === 'right' && S.sf >= 3 && S.sf < 6) S.sf++;
   else if (k === 'ok') { const el = fEls()[S.sf]; if (el.tagName === 'INPUT') el.focus(); else el.click(); return; }
   renderSettings();
 }
@@ -847,7 +897,7 @@ async function applyPlaylist(m, e, report) {
     if (!list.length) throw new Error('в плейлисте нет каналов');
     S.demo = false; setChannels(list); store.set('cache', list);
     report(`Загружено каналов: ${list.length}`);
-    setTimeout(() => { startLast(); const ep = e || store.get('epgAuto', ''); if (ep) startEPG(ep); }, 700);
+    setTimeout(() => { startLast(); startEPG(epgUrl()); }, 700);
     return true;
   } catch (err) { report('Не удалось загрузить плейлист: ' + err.message, true); return false; }
 }
@@ -949,6 +999,49 @@ $('#lnSend').onclick = async () => {
 };
 $('#btnDemo').onclick = () => startDemo();
 $('#btnClose').onclick = () => closeSettings();
+async function peek(url) {
+  const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 12000);
+  try {
+    const r = await fetch(APP ? viaApp(url) : url, { signal: ac.signal, cache: 'no-store' });
+    let bytes = new Uint8Array(0);
+    if (r.body) {
+      const rd = r.body.getReader();
+      while (bytes.length < 2048) { const { done, value } = await rd.read(); if (done) break; const b = new Uint8Array(bytes.length + value.length); b.set(bytes); b.set(value, bytes.length); bytes = b; }
+      try { rd.cancel(); } catch (e) {}
+    }
+    clearTimeout(t);
+    const text = new TextDecoder().decode(bytes.slice(0, 600));
+    let kind = 'неизвестно';
+    if (/#EXTM3U/.test(text)) kind = 'HLS-плейлист';
+    else if (bytes[0] === 0x47) kind = 'поток MPEG-TS';
+    else if (/<html|<!doctype/i.test(text)) kind = 'HTML-страница (не видео)';
+    return { status: r.status, type: r.headers.get('content-type') || '-', kind, text, len: bytes.length };
+  } catch (e) { clearTimeout(t); return { error: e.name === 'AbortError' ? 'нет ответа 12 с' : String(e.message || e) }; }
+}
+$('#btnDiag').onclick = async () => {
+  const out = $('#diagOut');
+  const ch = S.channels[S.cur >= 0 ? S.cur : 0];
+  if (!ch) { out.textContent = 'Нет каналов для проверки.'; return; }
+  const lines = [`Версия ${BUILD}${APP ? ', приложение' : ', браузер'}`, `Канал: ${ch.name}`, `Адрес: ${ch.url.slice(0, 90)}`];
+  if (S.lastErr) lines.push(`Последняя ошибка: ${S.lastErr}`);
+  lines.push(`Телепрограмма: ${S.epgStat || 'не запускалась'}`);
+  out.textContent = lines.join('\n') + '\nПроверяю…';
+  const a = await peek(ch.url);
+  if (a.error) lines.push(`Ответ: ошибка, ${a.error}`);
+  else {
+    lines.push(`Ответ: ${a.status}, ${a.type}, ${a.kind}, ${a.len} байт`);
+    if (a.kind === 'HLS-плейлист') {
+      const first = a.text.split(/\r?\n/).map(x => x.trim()).find(x => x && x[0] !== '#');
+      if (first) {
+        let u; try { u = new URL(first, ch.url).href; } catch (e) { u = first; }
+        lines.push(`Внутри: ${u.slice(0, 90)}`);
+        const b = await peek(u);
+        lines.push(b.error ? `Ответ внутри: ошибка, ${b.error}` : `Ответ внутри: ${b.status}, ${b.type}, ${b.kind}, ${b.len} байт`);
+      }
+    } else if (a.kind !== 'поток MPEG-TS') lines.push(`Начало: ${a.text.replace(/\s+/g, ' ').slice(0, 120)}`);
+  }
+  out.textContent = lines.join('\n');
+};
 
 /* ---------- Запуск ---------- */
 function startLast() {
@@ -984,7 +1077,7 @@ async function boot() {
     else { hideLoader(); openSettings(); setStatus('Не удалось загрузить плейлист: ' + err.message, true); return; }
   }
   hintOnce(); startLast();
-  const e = store.get('epg', '') || store.get('epgAuto', ''); if (e) startEPG(e);
+  if (!S.demo) startEPG(epgUrl());
 }
 
 /* ---------- Пульт и клавиатура ---------- */
@@ -1020,7 +1113,7 @@ function watchKey(k) {
   else if (k === 'down' || k === 'chdown') zap(-1);
   else if (k === 'ok') { if (S.muteHint) { video.muted = false; S.muteHint = false; toast('Звук включён', 2000); } else openHome(); }
   else if (k === 'left') openList();
-  else if (k === 'right') showOSD(8000);
+  else if (k === 'right') { if (S.osdOn) cycleAspect(); else showOSD(8000); }
   else if (k === 'back') { if (S.osdOn) hideOSD(); else openHome(); }
   else if (k === 'menu') openSettings();
   else if (k === 'playpause') { if (video.paused) { video.play().catch(() => {}); toast('Продолжаю', 1500); } else { video.pause(); toast('Пауза', 1500); } }
