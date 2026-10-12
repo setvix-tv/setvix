@@ -748,7 +748,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '3.3.3'; // меняется с каждой новой версией
+const BUILD = '3.4'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
@@ -1670,6 +1670,7 @@ async function openVod() {
   if (!S.vod && S.playing) { S.vodPausedTv = true; try { SetvixNative.pause(); } catch (e) { video.pause(); } }
   setMode('vod');
   if (!S.vcats) {
+    try { const c = await idbGet('vcat'); if (c && c.ts > Date.now() - 12 * 3600e3 && c.items && c.items.length) { S.vall = c.items; vpBuildCats(); return; } } catch (e) {}
     $('#vdGrid').innerHTML = '<p class="vd-msg">Загружаю фильмотеку…</p>';
     /* Пробуем несколько вариантов запроса корня каталога, пока не придёт список */
     /* Сервер понимает команду flicks, но на первый запрос вернул пустой раздел.
@@ -1718,6 +1719,7 @@ async function openVod() {
       .concat(movies.length ? [{ title: 'Все фильмы', root: true, first: movies, count: S.vpCount }] : [])
       .concat(cats.map(it => ({ title: vpTitle(it), fid: vpId(it), raw: it })));
     S.vc = 2;
+    if (movies.length && !cats.length) vpLoadCatalog(movies);
   }
   renderVodCats(); loadVodCat();
 }
@@ -1732,6 +1734,7 @@ async function loadVodCat(more) {
   if (!more) { S.vlist = []; S.vg = 0; S.vnext = null; }
   $('#vdSub').textContent = cat.title;
   if (cat.hist) { S.vlist = vhist(); renderVodGrid(); return; }
+  if (cat.local) { S.vlist = cat.items; S.vnext = null; renderVodGrid(); return; }
   if (cat.search) {
     if (!more) {
       $('#vdGrid').innerHTML = '<div class="vd-msg">Нажмите OK, чтобы ввести название. <input id="vdQ" type="text" style="margin-top:1rem;width:100%;font:600 1.3rem var(--sans);padding:.8rem 1rem;border-radius:.8rem;border:0;background:rgba(237,240,246,.08);color:var(--text)" placeholder="Название фильма или сериала"></div>';
@@ -1761,6 +1764,12 @@ async function loadVodCat(more) {
 }
 async function vodSearch(q) {
   q = String(q || '').trim(); if (!q) return;
+  if (S.vall && S.vall.length) {
+    const nq = vpNorm(q);
+    S.vlist = S.vall.filter(it => vpNorm(vpTitle(it)).includes(nq) || vpNorm(it.original || it.title_orig || '').includes(nq));
+    S.vg = 0; S.vfocus = S.vlist.length ? 'grid' : 'cats'; renderVodCats(); renderVodGrid();
+    $('#vdSub').textContent = `Поиск «${q}» · найдено ${S.vlist.length}`; return;
+  }
   $('#vdGrid').innerHTML = '<p class="vd-msg">Ищу…</p>';
   try { const j = await vpReq({ cmd: 'search', query: q, limit: 100, offset: 0 }); S.vlist = vpItems(j).filter(it => !vpIsNext(it)); S.vg = 0; S.vfocus = 'grid'; renderVodCats(); renderVodGrid(); }
   catch (e) { $('#vdGrid').innerHTML = `<p class="vd-msg">${esc(e.message)}</p>`; }
@@ -1780,6 +1789,11 @@ function renderVodGrid() {
       <b>${esc(vpTitle(it))}</b><small>${esc(it.year || it.genre || (vpIsFolder(it) ? 'Подборка' : ''))}</small></div>`;
   }
   box.innerHTML = html; S.vcols = cols;
+  const ct = S.vcats && S.vcats[S.vc];
+  if (ct && !ct.search) {
+    const total = ct.local ? L.length : Math.max(L.length, ct.count || 0);
+    $('#vdSub').textContent = `${ct.title} · ${S.vfocus === 'grid' ? (S.vg + 1) + ' из ' : ''}${total.toLocaleString('ru-RU')}${S.vcatLoading ? ' · загружаю каталог…' : ''}`;
+  }
   if (S.vnext != null && S.vg > L.length - cols * 2) loadVodCat(true);
 }
 function vodKey(k) {
@@ -1914,6 +1928,62 @@ function vodWatchKey(k) {
   if (k === 'ok' || k === 'playpause') { S.paused = !S.paused; try { S.paused ? SetvixNative.pause() : SetvixNative.resume(); } catch (e) { S.paused ? video.pause() : video.play(); } showVbar(S.paused ? 60000 : 3000); return; }
   if (k === 'up' || k === 'down' || k === 'info') { showVbar(); return; }
   if (k === 'back') { $('#vbar').classList.add('hidden'); try { SetvixNative.pause(); } catch (e) {} setMode('vodd'); renderVodd(); return; }
+}
+
+/* ---------- Каталог целиком: сервер отдаёт фильмы одним списком, раскладываем сами ---------- */
+const vpNorm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+const vpYear = it => { const y = +(it.year || it.release_year || (String(it.released || it.date || '').match(/(19|20)\d\d/) || [])[0] || 0); return y > 1900 && y < 2100 ? y : 0; };
+const vpGenres = it => { let g = it.genres || it.genre || it.categories || ''; if (Array.isArray(g)) g = g.map(x => typeof x === 'string' ? x : (x && (x.title || x.name)) || '').join(','); return String(g).split(/[,/;|]/).map(x => x.trim()).filter(Boolean).map(x => x[0].toUpperCase() + x.slice(1).toLowerCase()); };
+const vpIsSeries = it => /multi|serial|series|season/i.test(it.type || '') || it.seasons || it.episodes;
+async function vpLoadCatalog(first) {
+  try {
+    const cached = await idbGet('vcat');
+    if (cached && cached.ts > Date.now() - 12 * 3600e3 && cached.items && cached.items.length) { S.vall = cached.items; vpBuildCats(); return; }
+  } catch (e) {}
+  S.vcatLoading = true;
+  const base = store.get('vpRoot', null) || { cmd: 'flicks', limit: 50, offset: 0 };
+  const page = +base.limit > 0 ? +base.limit : first.length || 50;
+  const total = S.vpCount || 0;
+  const all = first.slice(); const seen = new Set(all.map(vpId));
+  let off = all.length, empty = 0;
+  for (let n = 0; n < 400 && (!total || off < total); n++) {
+    try {
+      const req = Object.assign({}, base, { offset: typeof base.offset === 'string' ? String(off) : off });
+      const j = await vpReq(req); const got = vpItems(j).filter(it => !vpIsNext(it));
+      let added = 0; got.forEach(it => { const k = vpId(it); if (!seen.has(k)) { seen.add(k); all.push(it); added++; } });
+      off += got.length || page;
+      if (!got.length || !added) { if (++empty >= 2) break; } else empty = 0;
+      if (n % 5 === 4) { S.vall = all; if (S.mode === 'vod') renderVodGrid(); }
+    } catch (e) { break; }
+  }
+  S.vcatLoading = false;
+  S.vall = all.map(it => { const o = {}; ['fid', 'id', 'title', 'name', 'img', 'poster', 'cover', 'image', 'thumb', 'year', 'genre', 'genres', 'type', 'original', 'title_orig', 'country', 'rating', 'description', 'url'].forEach(k => { if (it[k] != null) o[k] = it[k]; }); return o; });
+  try { await idbSet('vcat', { ts: Date.now(), items: S.vall }); } catch (e) {}
+  vpBuildCats();
+}
+function vpBuildCats() {
+  const all = S.vall || []; if (!all.length) return;
+  const byYear = (a, b) => (vpYear(b) - vpYear(a));
+  const sorted = all.slice().sort(byYear);
+  const now = new Date().getFullYear();
+  const cats = [{ title: 'Продолжить просмотр', hist: true }, { title: 'Поиск', search: true }];
+  const add = (title, items) => { if (items.length) cats.push({ title, local: true, items }); };
+  add('Новинки', sorted.filter(it => vpYear(it) >= now - 1));
+  const series = sorted.filter(vpIsSeries);
+  if (series.length && series.length < all.length) { add('Фильмы', sorted.filter(it => !vpIsSeries(it))); add('Сериалы', series); }
+  add('Все фильмы', sorted);
+  /* жанры: самые частые */
+  const gc = new Map(); all.forEach(it => vpGenres(it).forEach(g => gc.set(g, (gc.get(g) || 0) + 1)));
+  [...gc.entries()].filter(([, c]) => c >= 3).sort((a, b) => b[1] - a[1]).slice(0, 18)
+    .forEach(([g]) => add(g, sorted.filter(it => vpGenres(it).includes(g))));
+  /* годы по десятилетиям */
+  [[2020, 2099, '2020-е'], [2010, 2019, '2010-е'], [2000, 2009, '2000-е'], [1990, 1999, '1990-е'], [1900, 1989, 'Классика до 1990']]
+    .forEach(([a, b, t]) => add(t, sorted.filter(it => { const y = vpYear(it); return y >= a && y <= b; })));
+  const curTitle = S.vcats && S.vcats[S.vc] && S.vcats[S.vc].title;
+  S.vcats = cats;
+  const keep = cats.findIndex(c => c.title === curTitle);
+  S.vc = keep >= 0 ? keep : Math.min(2, cats.length - 1);
+  if (S.mode === 'vod') { renderVodCats(); if (S.vfocus === 'cats' || keep < 0) loadVodCat(); else renderVodGrid(); }
 }
 
 /* ---------- Иконки ---------- */
