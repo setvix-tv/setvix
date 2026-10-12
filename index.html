@@ -748,7 +748,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '3.3.1'; // меняется с каждой новой версией
+const BUILD = '3.3.2'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
@@ -1626,7 +1626,7 @@ const VP = { wait: {}, seq: 0 };
 function vpReq(params) {
   const cfg = vpParse(store.get('vportal', ''));
   if (!cfg) return Promise.reject(new Error('Не указана ссылка фильмотеки. Добавьте её в Настройках или через телефон.'));
-  const body = JSON.stringify(Object.assign({}, params, { key: cfg.key, mac: '000000000000', app: 'Setvix' }));
+  const body = JSON.stringify(Object.assign({ key: cfg.key, mac: '000000000000', app: 'Setvix' }, params));
   const parse = (status, text) => {
     S.vpLast = `Запрос: ${params.cmd}\nОтвет ${status}: ${String(text).slice(0, 400)}`;
     let j; try { j = JSON.parse(text); } catch (e) { throw new Error('Сервер ответил не так, как ожидалось.\n' + S.vpLast); }
@@ -1672,15 +1672,39 @@ async function openVod() {
   if (!S.vcats) {
     $('#vdGrid').innerHTML = '<p class="vd-msg">Загружаю фильмотеку…</p>';
     /* Пробуем несколько вариантов запроса корня каталога, пока не придёт список */
-    const tries = [{ cmd: 'flicks', limit: 300, offset: 0 }, { cmd: 'flicks', fid: 0, limit: 300, offset: 0 }, { cmd: 'categories' }, { cmd: 'filters' }, { cmd: 'genres' }];
+    /* Сервер понимает команду flicks, но на первый запрос вернул пустой раздел.
+       Перебираем варианты параметров и запоминаем тот, что вернёт список. */
+    const saved = store.get('vpRoot', null);
+    const tries = (saved ? [saved] : []).concat([
+      { cmd: 'flicks' },
+      { cmd: 'flicks', limit: 0, offset: 0 },
+      { cmd: 'flicks', limit: 50, offset: 0 },
+      { cmd: 'flicks', fid: 1, limit: 50, offset: 0 },
+      { cmd: 'flicks', fid: '0', limit: '50', offset: '0' },
+      { cmd: 'flicks', fid: 0, limit: 0, offset: 0, filter: {} },
+      { cmd: 'flicks', limit: 50, offset: 0, app: 'OttPlayer' },
+      { cmd: 'flicks', limit: 50, offset: 0, app: 'IPTV ChannelEditor' },
+      { cmd: 'flicks', limit: 50, offset: 0, mac: '00:1A:79:00:00:00' },
+      { cmd: 'flick', fid: 0 },
+      { cmd: 'search', query: 'а', limit: 20, offset: 0 }
+    ]);
     const log = []; let its = [];
     for (const t of tries) {
-      try { const j = await vpReq(t); its = vpItems(j).filter(it => !vpIsNext(it)); log.push(S.vpLast); if (its.length) { S.vpRoot = t; break; } }
-      catch (e) { log.push(e.message); }
+      const label = JSON.stringify(t);
+      try {
+        const j = await vpReq(t); const arr = vpItems(j).filter(it => !vpIsNext(it));
+        log.push(`${label} → ${arr.length ? 'найдено ' + arr.length : String(S.vpLast).split('\n').pop().slice(0, 140)}`);
+        if (arr.length) { its = arr; S.vpRoot = t; if (t.cmd === 'flicks') store.set('vpRoot', t); break; }
+      } catch (e) { log.push(`${label} → ${String(e.message).split('\n')[0]}`); }
+    }
+    if (its.length && S.vpRoot && S.vpRoot.cmd === 'search') {
+      $('#vdGrid').innerHTML = `<div class="vd-msg"><b>Поиск в фильмотеке работает, а список разделов сервер не отдаёт.</b>\nПришлите фото — доделаю разделы.\n\n${esc(log.join('\n'))}</div>`;
+      S.vcats = [{ title: 'Продолжить просмотр', hist: true }, { title: 'Поиск', search: true }]; renderVodCats(); return;
     }
     if (!its.length) {
       S.vcats = null;
-      $('#vdGrid').innerHTML = `<div class="vd-msg"><b>Сервер фильмотеки ответил, но список фильмов в ответе не найден.</b>\nСфотографируйте этот экран и пришлите — я подгоню плеер под ответ.\n\n${esc(log.join('\n\n').slice(0, 1600))}</div>`;
+      const k = (vpParse(store.get('vportal', '')) || {}).key || '';
+      $('#vdGrid').innerHTML = `<div class="vd-msg"><b>Сервер фильмотеки отвечает, но разделы пока пустые.</b>\nСфотографируйте этот экран и пришлите.\nКлюч: ${esc(k.slice(0, 6))}…${esc(k.slice(-4))} (${k.length} символов)\n\n${esc(log.join('\n').slice(0, 2200))}</div>`;
       $('#vdCats .lbody').innerHTML = ''; return;
     }
     S.vcats = [{ title: 'Продолжить просмотр', hist: true }, { title: 'Поиск', search: true }].concat(its.map(it => ({ title: vpTitle(it), fid: vpId(it), raw: it })));
