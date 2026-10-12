@@ -492,7 +492,8 @@ body.mob #ctl{display:none!important}
 .vp.sel{transform:scale(1.07);z-index:2}
 .vp.sel .vp-img{box-shadow:0 0 0 .2rem #fff,0 1rem 2.4rem rgba(0,0,0,.6)}
 .vd-cats.dim{opacity:.55}
-.vd-msg{color:var(--muted);font-weight:600;padding:1rem;line-height:1.5;white-space:pre-wrap;word-break:break-all}
+.vd-msg{color:var(--muted);font-weight:600;padding:1rem;line-height:1.45;white-space:pre-wrap;word-break:break-all;font-size:.95rem;max-height:100%;overflow:hidden}
+.vd-msg b{color:var(--text);font-size:1.15rem}
 #vodd{z-index:6;background:var(--night);overflow:hidden}
 .vdd-bg{position:absolute;inset:0;background:center/cover no-repeat;opacity:.18;filter:blur(18px);transform:scale(1.1)}
 .vdd-in{position:relative;display:flex;gap:2.6rem;padding:3.6rem 4rem;height:100%}
@@ -747,7 +748,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '3.3'; // меняется с каждой новой версией
+const BUILD = '3.3.1'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
@@ -1644,7 +1645,17 @@ function vpReq(params) {
     .then(r => r.text().then(t => parse(r.status, t)))
     .catch(e => { throw new Error(/Сервер/.test(e.message) ? e.message : 'Фильмотека открывается в приложении Setvix на приставке или телефоне.'); });
 }
-const vpItems = j => (j && (j.items || j.flicks || j.data || j.list || j.results)) || (Array.isArray(j) ? j : []);
+/* Сервер может вернуть список под разными ключами и глубже по структуре — ищем первый массив объектов */
+function vpFindArr(j, depth) {
+  depth = depth || 0;
+  if (Array.isArray(j)) return j;
+  if (!j || typeof j !== 'object' || depth > 3) return null;
+  for (const k of ['items', 'flicks', 'data', 'list', 'results', 'categories', 'genres', 'groups', 'videos', 'movies', 'content', 'rows'])
+    if (Array.isArray(j[k])) return j[k];
+  for (const k in j) { const r = vpFindArr(j[k], depth + 1); if (r && r.length && r[0] && typeof r[0] === 'object') return r; }
+  return null;
+}
+const vpItems = j => vpFindArr(j) || [];
 const vpImg = it => it && (it.img || it.poster || it.cover || it.image || it.logo || '');
 const vpTitle = it => it && (it.title || it.name || it.caption || 'Без названия');
 const vpId = it => it && (it.fid != null ? it.fid : it.id);
@@ -1660,11 +1671,20 @@ async function openVod() {
   setMode('vod');
   if (!S.vcats) {
     $('#vdGrid').innerHTML = '<p class="vd-msg">Загружаю фильмотеку…</p>';
-    try {
-      const j = await vpReq({ cmd: 'flicks', limit: 300, offset: 0 });
-      const its = vpItems(j).filter(it => !vpIsNext(it));
-      S.vcats = [{ title: 'Продолжить просмотр', hist: true }, { title: 'Поиск', search: true }].concat(its.map(it => ({ title: vpTitle(it), fid: vpId(it), raw: it })));
-    } catch (e) { $('#vdGrid').innerHTML = `<p class="vd-msg">${esc(e.message)}</p>`; return; }
+    /* Пробуем несколько вариантов запроса корня каталога, пока не придёт список */
+    const tries = [{ cmd: 'flicks', limit: 300, offset: 0 }, { cmd: 'flicks', fid: 0, limit: 300, offset: 0 }, { cmd: 'categories' }, { cmd: 'filters' }, { cmd: 'genres' }];
+    const log = []; let its = [];
+    for (const t of tries) {
+      try { const j = await vpReq(t); its = vpItems(j).filter(it => !vpIsNext(it)); log.push(S.vpLast); if (its.length) { S.vpRoot = t; break; } }
+      catch (e) { log.push(e.message); }
+    }
+    if (!its.length) {
+      S.vcats = null;
+      $('#vdGrid').innerHTML = `<div class="vd-msg"><b>Сервер фильмотеки ответил, но список фильмов в ответе не найден.</b>\nСфотографируйте этот экран и пришлите — я подгоню плеер под ответ.\n\n${esc(log.join('\n\n').slice(0, 1600))}</div>`;
+      $('#vdCats .lbody').innerHTML = ''; return;
+    }
+    S.vcats = [{ title: 'Продолжить просмотр', hist: true }, { title: 'Поиск', search: true }].concat(its.map(it => ({ title: vpTitle(it), fid: vpId(it), raw: it })));
+    S.vc = 2;
   }
   renderVodCats(); loadVodCat();
 }
@@ -1778,7 +1798,7 @@ function renderVodd() {
     if (pos && pos.p > 30000 && pos.ep == null) btns.push({ t: `Продолжить с ${fmtT(pos.p)}`, act: () => playVod(d.vars[pos.vi || 0] || d.vars[0], pos.p, null) });
     d.vars.forEach((v, i) => btns.push({ t: d.vars.length > 1 ? (v.title || v.quality || `Вариант ${i + 1}`) : 'Смотреть', act: () => playVod(v, 0, null, i) }));
   }
-  if (!btns.length && !d.eps.length) btns.push({ t: 'Нет ссылки на видео', act: () => toast(S.vpLast || 'Сервер не прислал ссылку', 8000) });
+  if (!btns.length && !d.eps.length) { btns.push({ t: 'Нет ссылки на видео', act: () => {} }); $('#vddDesc').textContent = 'Ответ сервера: ' + (S.vpLast || '').slice(0, 700); }
   d.btns = btns; d.bf = Math.min(d.bf, Math.max(0, btns.length - 1));
   $('#vddBtns').innerHTML = btns.map((b, i) => `<div class="cb${d.ef < 0 && i === d.bf ? ' sel' : ''}" data-i="${i}"><span>${esc(b.t)}</span></div>`).join('');
   if (d.eps.length) {
