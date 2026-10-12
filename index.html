@@ -748,7 +748,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '3.3.2'; // меняется с каждой новой версией
+const BUILD = '3.3.3'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
@@ -1626,7 +1626,7 @@ const VP = { wait: {}, seq: 0 };
 function vpReq(params) {
   const cfg = vpParse(store.get('vportal', ''));
   if (!cfg) return Promise.reject(new Error('Не указана ссылка фильмотеки. Добавьте её в Настройках или через телефон.'));
-  const body = JSON.stringify(Object.assign({ key: cfg.key, mac: '000000000000', app: 'Setvix' }, params));
+  const body = JSON.stringify(Object.assign({ key: cfg.key, mac: '000000000000', app: 'Setvix' }, store.get('vpProf', {}), params));
   const parse = (status, text) => {
     S.vpLast = `Запрос: ${params.cmd}\nОтвет ${status}: ${String(text).slice(0, 400)}`;
     let j; try { j = JSON.parse(text); } catch (e) { throw new Error('Сервер ответил не так, как ожидалось.\n' + S.vpLast); }
@@ -1656,7 +1656,7 @@ function vpFindArr(j, depth) {
   return null;
 }
 const vpItems = j => vpFindArr(j) || [];
-const vpImg = it => it && (it.img || it.poster || it.cover || it.image || it.logo || '');
+const vpImg = it => it && (it.img || it.poster || it.cover || it.image || it.thumb || it.picture || it.icon || it.poster_url || it.cover_url || it.logo || (it.images && (it.images.poster || it.images.cover)) || '');
 const vpTitle = it => it && (it.title || it.name || it.caption || 'Без названия');
 const vpId = it => it && (it.fid != null ? it.fid : it.id);
 const vpIsNext = it => it && /next|more/i.test(it.type || '');
@@ -1692,9 +1692,13 @@ async function openVod() {
     for (const t of tries) {
       const label = JSON.stringify(t);
       try {
-        const j = await vpReq(t); const arr = vpItems(j).filter(it => !vpIsNext(it));
+        const j = await vpReq(t); const arr = vpItems(j).filter(it => !vpIsNext(it)); S.vpCount = j && +j.count || 0;
         log.push(`${label} → ${arr.length ? 'найдено ' + arr.length : String(S.vpLast).split('\n').pop().slice(0, 140)}`);
-        if (arr.length) { its = arr; S.vpRoot = t; if (t.cmd === 'flicks') store.set('vpRoot', t); break; }
+        if (arr.length) {
+          its = arr; S.vpRoot = t;
+          if (t.cmd === 'flicks') { store.set('vpRoot', t); const prof = {}; if (t.app) prof.app = t.app; if (t.mac) prof.mac = t.mac; store.set('vpProf', prof); }
+          break;
+        }
       } catch (e) { log.push(`${label} → ${String(e.message).split('\n')[0]}`); }
     }
     if (its.length && S.vpRoot && S.vpRoot.cmd === 'search') {
@@ -1707,7 +1711,12 @@ async function openVod() {
       $('#vdGrid').innerHTML = `<div class="vd-msg"><b>Сервер фильмотеки отвечает, но разделы пока пустые.</b>\nСфотографируйте этот экран и пришлите.\nКлюч: ${esc(k.slice(0, 6))}…${esc(k.slice(-4))} (${k.length} символов)\n\n${esc(log.join('\n').slice(0, 2200))}</div>`;
       $('#vdCats .lbody').innerHTML = ''; return;
     }
-    S.vcats = [{ title: 'Продолжить просмотр', hist: true }, { title: 'Поиск', search: true }].concat(its.map(it => ({ title: vpTitle(it), fid: vpId(it), raw: it })));
+    /* В ответе могут быть разделы, а могут сразу фильмы. Фильмы — обложками в «Все фильмы», разделы — слева. */
+    const isCat = it => /categor|folder|group|genre|dir/i.test(it.type || '') && !it.url;
+    const cats = its.filter(isCat), movies = its.filter(x => !isCat(x));
+    S.vcats = [{ title: 'Продолжить просмотр', hist: true }, { title: 'Поиск', search: true }]
+      .concat(movies.length ? [{ title: 'Все фильмы', root: true, first: movies, count: S.vpCount }] : [])
+      .concat(cats.map(it => ({ title: vpTitle(it), fid: vpId(it), raw: it })));
     S.vc = 2;
   }
   renderVodCats(); loadVodCat();
@@ -1730,15 +1739,25 @@ async function loadVodCat(more) {
     }
     return;
   }
+  if (cat.root && !more && cat.first) {
+    S.vlist = cat.first.slice(); S.vnext = cat.count && cat.count > S.vlist.length ? S.vlist.length : null; renderVodGrid(); return;
+  }
   if (!more) $('#vdGrid').innerHTML = '<p class="vd-msg">Загружаю…</p>';
+  if (S.vbusy) return; S.vbusy = true;
   try {
-    const j = await vpReq({ cmd: 'flicks', fid: +cat.fid || cat.fid, limit: 60, offset: more ? S.vnext : 0 });
+    const base = store.get('vpRoot', null) || { cmd: 'flicks', limit: 50, offset: 0 };
+    const off = more ? S.vnext : 0;
+    const req = cat.root ? Object.assign({}, base, { offset: typeof base.offset === 'string' ? String(off) : off })
+                         : Object.assign({}, base, { fid: typeof base.fid === 'string' ? String(cat.fid) : (+cat.fid || cat.fid), offset: typeof base.offset === 'string' ? String(off) : off });
+    const j = await vpReq(req);
     if (my !== S.vloadId) return;
-    const its = vpItems(j);
-    const nx = its.find(vpIsNext); S.vnext = nx ? (nx.offset != null ? nx.offset : S.vlist.length + its.length - 1) : null;
-    S.vlist = S.vlist.concat(its.filter(it => !vpIsNext(it)));
+    const its = vpItems(j), got = its.filter(it => !vpIsNext(it));
+    const nx = its.find(vpIsNext), total = +(j && j.count) || 0;
+    S.vlist = S.vlist.concat(got);
+    S.vnext = nx ? (nx.offset != null ? nx.offset : S.vlist.length) : (total && S.vlist.length < total && got.length ? S.vlist.length : null);
     renderVodGrid();
   } catch (e) { if (my === S.vloadId) $('#vdGrid').innerHTML = `<p class="vd-msg">${esc(e.message)}</p>`; }
+  finally { S.vbusy = false; }
 }
 async function vodSearch(q) {
   q = String(q || '').trim(); if (!q) return;
@@ -1799,7 +1818,8 @@ async function openVodDetails(it, hist) {
   $('#vddBtns').innerHTML = '<span class="tip">Загружаю…</span>'; $('#vddEps').innerHTML = '';
   setMode('vodd');
   try {
-    const j = it.url ? it : await vpReq({ cmd: 'flick', fid: +vpId(it) || vpId(it), limit: 0, offset: 0 });
+    const strNums = (store.get('vpRoot', {}) || {}).offset === '0';
+    const j = it.url ? it : await vpReq(strNums ? { cmd: 'flick', fid: String(vpId(it)), limit: '0', offset: '0' } : { cmd: 'flick', fid: +vpId(it) || vpId(it), limit: 0, offset: 0 });
     const d = j.flick || j.item || j;
     S.vd.data = d;
     $('#vddTitle').textContent = vpTitle(d.title ? d : it);
