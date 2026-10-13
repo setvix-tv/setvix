@@ -752,7 +752,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '3.5'; // меняется с каждой новой версией
+const BUILD = '3.6'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
@@ -905,6 +905,15 @@ function applyView(list) {
   const order = Object.keys(v); out.sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group));
   return out.length ? out : list;
 }
+/* Рекомендуемое избранное: самые смотрибельные каналы. Добавляется один раз в каждой подборке;
+   если канал убрать из избранного вручную, он не вернётся. */
+const FAV_SEED = new Set(["Первый канал", "Россия 1", "НТВ", "ТНТ", "СТС", "РЕН ТВ", "Пятый канал", "ТВ Центр", "ТВ-3", "Домашний", "Пятница!", "Россия 24", "РБК", "Deutsche Welle Russian", "Настоящее время", "RTVi", "Дом Кино Премиум", "Кинопремьера", "Кинохит", "Viju+ Premiere", "Amedia Premium", "Viju TV1000", "Русский иллюзион", "Матч ТВ", "Матч! Премьер", "Матч! Футбол 1", "Матч! Арена", "Eurosport 1", "Setanta Sports 1", "KHL Prime", "National Geographic", "Discovery Channel", "Viju History", "Моя Планета", "Animal Planet", "Карусель", "Мульт", "Nickelodeon", "МУЗ-ТВ", "Europa Plus TV", "Armenia 1 AM", "Armenia TV AM", "ATV AM", "Kentron AM", "5TV AM", "Imedi GE", "Rustavi 2 GE", "1TV GE", "Formula GE", "TV Pirveli GE", "Silk Sport 1 GE", "1+1 Україна UA", "ICTV UA", "СТБ UA", "Новий Канал UA"]);
+function seedFav() {
+  if (S.demo) return; const k = 'favSeed:' + curView().id; if (store.get(k, false)) return;
+  let n = 0; S.channels.forEach(c => { if (FAV_SEED.has(c.name) && !S.fav.has(c.key)) { S.fav.add(c.key); n++; } });
+  store.set('fav', [...S.fav]); store.set(k, true);
+  if (n) setTimeout(() => toast(`В «Избранное» добавлено ${n} популярных каналов`, 5000), 2500);
+}
 const plsList = () => store.get('pls', []);
 function plsName(url) { try { return new URL(url).hostname.replace(/^[^.]+\.(?=[^.]+\.[^.]+$)/, ''); } catch (e) { return 'Плейлист'; } }
 function plsRemember(url, name) {
@@ -943,7 +952,7 @@ function setChannels(list) {
   S.channels.forEach((c, i) => { if (!g.has(c.group)) g.set(c.group, []); g.get(c.group).push(i); });
   S.groups = [...g.entries()].map(([title, items]) => ({ title, items }));
   if (S.groups.length === 1) S.groups[0].title = 'Все каналы';
-  buildRows();
+  seedFav(); buildRows();
 }
 function favList() { return S.channels.map((c, i) => i).filter(i => S.fav.has(S.channels[i].key)); }
 function buildRows() {
