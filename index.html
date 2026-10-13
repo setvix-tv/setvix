@@ -580,6 +580,9 @@ body.mob #vod,body.mob #vodd{z-index:9}
       <button id="btnGroups">Группы каналов</button>
       <button id="btnAutoQ"></button>
       <button id="btnFx"></button>
+      <button id="btnView"></button>
+      <button id="btnPls"></button>
+      <button id="btnPlsDel">Убрать этот плейлист</button>
     </div>
     <p id="setStatus" class="status"></p>
     <p class="tip">Пульт: стрелки двигают выбор, OK открывает поле или нажимает кнопку. <span id="verLabel"></span></p>
@@ -605,8 +608,9 @@ body.mob #vod,body.mob #vodd{z-index:9}
 <section id="link" class="layer hidden">
   <div class="sheet link-sheet">
     <h2>Подключить телевизор</h2>
-    <p class="sub">Введите код с экрана телевизора и ссылку на плейлист. Телевизор загрузит каналы сам.</p>
+    <p class="sub">Введите код с экрана телевизора и ссылку на плейлист. Телевизор загрузит каналы сам и запомнит плейлист: можно отправить несколько разных, они переключаются в настройках.</p>
     <label class="field"><span>Код с телевизора</span><input id="lnCode" inputmode="numeric" maxlength="7" placeholder="123 456" autocomplete="off"></label>
+    <label class="field"><span>Название плейлиста (необязательно)</span><input id="lnName" type="text" maxlength="40" placeholder="например, Провайдер" autocomplete="off"></label>
     <label class="field"><span>Плейлист M3U</span><input id="lnM3u" type="url" placeholder="https://…/playlist.m3u" autocomplete="off" spellcheck="false"></label>
     <label class="field"><span>Телепрограмма XMLTV (необязательно)</span><input id="lnEpg" type="url" placeholder="https://…/epg.xml.gz" autocomplete="off" spellcheck="false"></label>
     <label class="field"><span>Фильмотека VPortal (необязательно)</span><input id="lnVp" type="text" placeholder="portal::[key:…]http://…/api/v1/" autocomplete="off" spellcheck="false"></label>
@@ -748,7 +752,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '3.4'; // меняется с каждой новой версией
+const BUILD = '3.5'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
@@ -888,8 +892,29 @@ function variantInfo(name) {
   return { base, label, score, q, orig, fps50, shift };
 }
 const hiddenGroups = () => new Set(store.get('hidG', ['Взрослые', 'Adult', 'XXX', '18+']));
+/* ---------- Подборки и сохранённые плейлисты ----------
+   Подборка — это фильтр поверх загруженного плейлиста: только названия каналов, без ссылок и ключей. */
+const VIEWS = {"top":{"Общие":["Первый канал","Россия 1","НТВ","РЕН ТВ","ТНТ","СТС","Пятый канал","ТВ Центр","ТВ-3","Звезда","Домашний","Пятница!","Россия К","Мир","ОТР","СТС Love","Суббота!","Че!","ТНТ4","Ю ТВ","СПАС","360","НТВ Мир","Ностальгия","RTVi","Дождь","Настоящее время"],"Новостные":["Россия 24","РБК","Мир 24","Москва 24","Известия","Euronews Россия","360 Новости","Deutsche Welle Russian","РТР Планета","RT","BBC One UK","Fox News US","24 Канал UA"],"Кино":["Дом Кино","Дом Кино Премиум","Кинопремьера","Кинохит","Киносемья","Кинокомедия","Кинопоказ","Наш Кинопоказ","Наше Новое Кино","Родное Кино","Мужское Кино","Киносерия","Киномикс","Русский иллюзион","Иллюзион+","Русский детектив","Русский роман","Русский бестселлер","Мосфильм. Золотая коллекция","Советская киноклассика","Еврокино","Индийское Кино","НТВ Сериал","НТВ Хит","Viju TV1000","Viju TV1000 Русское","Viju TV1000 Action","Viju+ Premiere","Viju+ Megahit","Viju+ Comedy","Viju+ Serial","Amedia Premium","Amedia Hit","Amedia 1","Amedia 2","FX","FX Life","Epic Drama","Hollywood","Блокбастер","Любимое Кино","Ретро","Феникс плюс Кино"],"Спорт":["Матч ТВ","Матч! Премьер","Матч! Футбол 1","Матч! Футбол 2","Матч! Футбол 3","Матч! Арена","Матч! Игра","Матч! Планета","Матч! Боец","Матч! Страна","KHL","KHL Prime","Eurosport 1","Eurosport 2","Setanta Sports 1","Setanta Sports 2","Setanta Sports UA","Megogo Спорт","Окко Футбол","Окко Спорт","Окко Прайм Спорт","Viju+ Sport","Старт","Бокс ТВ","Хоккей ТВ","UFC Fight","Red Bull TV","ESPN US","ESPN 2 US"],"Детские":["Карусель","Мульт","О!","СТС Kids","Мультимузыка","Детский мир","В гостях у сказки","Nickelodeon","Nick Jr.","Cartoon Network","Cartoonito","Tiji TV","Gulli Girl","Da Vinci","Baby TV","Рыжий","Ani"],"Музыка":["МУЗ-ТВ","Музыка Первого","Europa Plus TV","Жара","РУ.ТВ","Шансон ТВ","Bridge TV","Bridge Русский Хит","Bridge Rock","Первый музыкальный","Music Box Russia","MTV US","MTV Classic","Mezzo"],"Познавательные":["National Geographic","National Geographic Wild","Discovery Channel","Animal Planet","Моя Планета","Viju History","Viju Nature","Viju Explore","History","History 2","TLC","Investigation Discovery","Travel Channel","Наука","Живая Планета","Охотник и Рыболов","Food Network","Кухня","Доктор","Время","Поехали!","Телепутешествия"],"Развлекательные":["Солнце","2x2","Перец International","СТС International","Fashion TV","Анекдот ТВ"],"Региональные":["Санкт-Петербург","Москва доверие"],"Армения | Հայկական":["Armenia 1 AM","H1 AM","Armenia TV AM","ATV AM","5TV AM","Kentron AM","Yerkir Media AM","21TV AM","H2 AM","Armenia Premium AM","ATV Kinoman AM","Tuntunik AM","Comedy AM","FreeNews AM","Azatutyun TV AM","USArmenia TV AM","Fast Sports AM"],"Грузия | ქართული":["Imedi GE","Rustavi 2 GE","1TV GE","TV Pirveli GE","Formula GE","Palitra News GE","Maestro GE","Adjara TV GE","Pos TV GE","GDS GE","Euronews Georgia GE","Silk Sport 1 GE","Silk Sport 2 GE","Silk Sport 3 GE","Setanta Sports 1 GE","Setanta Sports 2 GE","Comedy Arxi GE","Silk Hollywood Movies GE","Silk Kids GE"],"Украина | Українські":["1+1 Україна UA","1+1 International UA","Інтер UA","ICTV UA","СТБ UA","Новий Канал UA","ТЕТ UA","2+2 UA","НТН UA","К1 UA","Мега UA","Перший UA","1+1 Марафон UA","5 Канал UA","24 Канал UA","Еспресо UA","Прямий UA","Bolt UA","Star Cinema UA","ПлюсПлюс UA","Пiксель TV UA","Sport 1 UA","Sport 2 UA","Суспільне Спорт UA"],"Беларусь | Беларускія":["Беларусь 1 BY","ОНТ BY","СТВ BY","Беларусь 24 BY","Беларусь 5 BY","Белсат"],"Казахстан | Қазақстан":["Хабар KZ","Qazaqstan KZ","Первый канал Евразия KZ","КТК KZ","31 арна KZ","Седьмой канал KZ","Astana TV KZ","24 KZ","Balapan KZ"],"Узбекистан | O'zbek":["O'zbekiston 1 UZ","O'zbekiston 24 UZ","Yoshlar UZ","Zo'r TV UZ","Milliy TV UZ","Toshkent UZ","Sport UZ","Bolajon UZ"],"Азербайджан | Azərbaycan":["AzTV AZ","Ictimai TV AZ","ARB TV AZ","Xəzər TV AZ","Space TV AZ","Real TV AZ","ARB 24 AZ","CBC Sport AZ","Idman TV AZ"],"Молдавия | Moldovenească":["Moldova 1 MD","Pro TV Chisinau MD","Jurnal TV MD","TV8 MD","Cinema 1 MD","N4 MD","Exclusiv TV MD","ТСВ MD","NTS MD","Setanta Moldova"],"Израиль | ישראלי":["Channel 9 IL","Keshet 12 IL","Reshet 13 IL","Channel 11 IL","Channel 14 IL","i24 News IL","5Sport IL","Sport 1 IL","Sport 2 IL","One IL","HOT 3 IL","Yes TV Drama IL"],"Турция | Türk":["TRT 1 TR","ATV TR","Show TV TR","Star TV TR","Kanal D TR","NOW TR","TV8 TR","Kanal 7 TR","TRT Haber TR","Haber Turk TR","CNN Turk TR","NTV TR","A Haber TR","beIN Sports 1 TR","TRT Spor TR","TRT Cocuk TR","TRT Belgesel TR","TRT Turk TR","Euro D TR","ATV Avrupa TR","Eurostar TR","Kanal 7 Avrupa TR","TV8 Int TR","Show Max TR"],"Латвия | Latvia":["Первый Канал Европа","LTV1 LV","TV3 LV","TV6 LV","TV24 LV","Go3 Sport 1 LV"],"Литва | Lithuania":["LRT TV LT","LNK LT","TV3 LT","BTV LT","LRT Plius LT","Go3 Sport 1 LT"],"Эстония | Estonia":["ETV EE","ETV+ EE","Kanal 2 EE","TV3 EE"],"США | USA":["ABC US","CBS New York US","NBC New York US","Fox 5 WNYW US","CNN US","CNBC US","Fox Sports 1 US","NFL Network US","NFL RedZone US","NBA TV US","TNT US","TBS US","USA US","AMC US","HGTV","Discovery Channel US","History US","Comedy Central US","Bravo US","E! US","Lifetime US","Food Network US","Paramount Network US","A&E US","TLC US","Telemundo US","Univision US","BBC America US","Newsmax TV US","Golf Channel US","Nick Jr. US","Disney XD US"],"Канада | Canada":["CBC Toronto CA","CTV Toronto CA","Global Toronto CA","City TV Toronto CA","CBC News Network CA","CTV News Channel CA","CP 24 CA","TSN 1 CA","TSN 2 CA","TSN 3 CA","TSN 4 CA","TSN 5 CA","Sportsnet ONE CA","Sportsnet Ontario CA","Sportsnet East CA","Sportsnet West CA","Sportsnet Pacific CA","OMNI.1 CA"],"Великобритания | United Kingdom":["BBC Two UK","ITV1 UK","ITV2 UK","Channel 4 UK","STV UK","BBC News UK","Sky News UK","Sky Sports Main Event UK","Sky Sports Premier League UK","Sky Sports Football UK","Sky Sports F1 UK","TNT Sports 1 UK","TNT Sports 2 UK","TNT Sports 3 UK","Premier Sports 1 UK","U&Dave UK","Sky History UK","Al Jazeera English UK"],"Германия | Germany":["Das Erste DE","ZDF DE","RTL DE","Sat.1 DE","ProSieben DE","VOX DE","Kabel Eins DE","RTL Zwei DE","N-TV DE","Welt DE","ZDFinfo DE","Arte DE","3sat DE","KiKA DE","NDR DE","WDR (Aachen) DE","BR Fernsehen (Süd) DE","DMAX DE","Comedy Central DE","Sport 1 DE","Sky Sport Bundesliga 1 DE","Sky Sport 1 DE","Sky Sport Top Event DE","DAZN 1 DE","DAZN 2 DE","Sky Cinema Premiere DE","Sky Atlantic DE","ORF 1 DE"],"Франция | France":["TF1 FR","France 2 FR","France 3 FR","France 5 FR","M6 FR","Arte FR","TMC FR","W9 FR","France 24 FR","France Info FR","LCI FR","CNews FR","Canal+ FR","Canal+ Sport FR","beIN Sports 1 FR","RMC Sport 1 FR","La chaîne L'Équipe FR"],"Испания | Spain":["La 1 ES","La 2 ES","Antena 3 ES","Telecinco ES","Cuatro ES","LaSexta ES","24 Horas ES","TVE Internacional ES","Teledeporte ES","M+ LaLiga ES","M+ Liga de Campeones ES","DAZN LaLiga ES","M+ Deportes ES","Real Madrid TV ES","Gol ES"],"Италия | Italy":["Rai 1 IT","Rai 2 IT","Rai 3 IT","Rai News 24 IT","Rai Sport IT","Rai Italia IT","Sky Sport Calcio IT","Sky Sport 24 IT","Sky Cinema Uno IT","Sky Atlantic IT"],"Польша | Poland":["TVP 1 PL","TVP 2 PL","TVN PL","Polsat PL","TVN 24 PL","TVP Info PL","Polsat News PL","TVP Polonia PL","TVP Sport PL","Polsat Sport 1 PL","Canal+ Sport PL","Eleven Sports 1 PL","TV4 PL","TV Puls PL","Super Polsat PL"],"Румыния | Romania":["Pro TV RO","Antena 1 RO","Kanal D RO","Prima TV RO","TVR 1 RO","DIGI 24 RO","Antena 3 CNN RO","Romania TV RO","Acasă TV RO","Pro TV International RO","TVR International RO","DIGI Sport 1 RO","DIGI Sport 2 RO","Prima Sport 1 RO","HBO RO"],"Португалия | Portugal":["Sport TV 1 PT","Sport TV 2 PT","Benfica TV PT","DAZN 1 PT"],"Швеция | Sweden":["SVT1 SE","SVT2 SE","TV4 SE","Kanal 5 SE","TV3 SE"],"Болгария | Bulgaria":["BTV BG","Nova BG","БНТ 1 BG"],"Хорватия | Croatia":["Arena Sport 1 HR","Sport Klub 1 HR"],"Чехия | Czech Republic":["ČT sport CZ","Nova Sport 1 CZ"],"Нидерланды | Netherlands":["Ziggo Sport NL"],"Дания | Denmark":["DR1 DK","TV 2 Sport DK"],"Европа | Europe":["BBC World News UK","CNN International Europe","RT Док"],"ОАЭ | UAE":["MBC 2 AE","MBC 4 AE","Al Hadath AE"],"Арабские | عربي":["Al Jazeera QA","beIN Sports 1 QA"],"Индия | India":["Star Sports 1 IN","Star Sports 2 IN","Aaj Tak IN","Zee TV IN","Sony SAB IN","Sony Max 1 IN","NDTV 24x7 IN"],"Бразилия | Brasil":["HBO BR","ESPN BR","Band News BR"],"Таджикистан | Точик":["Тоҷикистон TJ","Сафина TJ"],"Южная Корея | Korea":["KBS World KR","Arirang KR"],"Взрослые":["Playboy TV","Brazzers TV Europe","Brazzers TV Europe Россия","Private TV","Dorcel TV","Hustler","Blue Hustler","Penthouse Passion","Penthouse Gold","Vivid Red","Vivid TV Europe","Redlight","Русская Ночь","Exxxotica","Extasy Platinum"]},"let":{"Волна 1 · раздают сигнал партнёрам":["Deutsche Welle Russian","Deutsche Welle English","NHK World JP","France 24 FR","Arirang KR","KBS World KR","CGTN","CGTN Русский","Al Jazeera QA","Al Jazeera English UK","Настоящее время","Euronews Россия","Euronews Georgia GE","Euronews Bulgaria BG","Euronews Romania MD"],"Волна 2 · общественные вещатели":["Armenia 1 AM","H1 AM","1TV GE","Перший UA","Суспільне Спорт UA","Суспільне Київ UA","Суспільне Культура UA","Суспільне Крим UA"],"Волна 3 · каналы диаспоры":["Armenia TV AM","Armenia Premium AM","ATV AM","ATV Kinoman AM","ATV Hay TV AM","ATV Tava AM","ATV Muzzone AM","ATV Bazmoc TV AM","ATV LifeHack AM","ATV Xaxaliq AM","ATV Fitness AM","Kentron AM","5TV AM","5TV Plus AM","Yerkir Media AM","21TV AM","Imedi GE","Maestro GE","Rustavi 2 GE","Formula GE","TV Pirveli GE","Palitra News GE","1+1 Україна UA","1+1 International UA","2+2 UA","ТЕТ UA","ПлюсПлюс UA","Бігуді UA","ICTV UA","ICTV 2 UA","СТБ UA","Новий Канал UA","Оце UA","М1 UA","М2 UA","Інтер UA","НТН UA","К1 UA","К2 UA","Мега UA","Zoom UA","Enter-фільм UA","Пiксель TV UA","i24 News IL","i24 News US","RTVi","Дождь"]}};
+const VIEW_LIST = [{ id: 'all', name: 'Все каналы' }, { id: 'top', name: 'Топ-550' }, { id: 'let', name: 'Письма каналам' }];
+const curView = () => VIEW_LIST.find(v => v.id === store.get('view', 'all')) || VIEW_LIST[0];
+function applyView(list) {
+  const v = VIEWS[curView().id]; if (!v) return list;
+  const map = new Map(); Object.entries(v).forEach(([g, arr]) => arr.forEach(b => { if (!map.has(b)) map.set(b, g); }));
+  const out = [];
+  list.forEach(c => { const g = map.get(variantInfo(c.name).base); if (g) out.push(Object.assign({}, c, { group: g })); });
+  const order = Object.keys(v); out.sort((a, b) => order.indexOf(a.group) - order.indexOf(b.group));
+  return out.length ? out : list;
+}
+const plsList = () => store.get('pls', []);
+function plsName(url) { try { return new URL(url).hostname.replace(/^[^.]+\.(?=[^.]+\.[^.]+$)/, ''); } catch (e) { return 'Плейлист'; } }
+function plsRemember(url, name) {
+  const l = plsList(); const i = l.findIndex(p => p.url === url);
+  if (i >= 0) { if (name) l[i].name = name; } else l.push({ name: name || plsName(url) + (l.length ? ' ' + (l.length + 1) : ''), url });
+  store.set('pls', l.slice(-10));
+}
 function setChannels(list) {
   S.raw = list;
+  if (!S.demo) list = applyView(list);
   const hid = hiddenGroups();
   const byBase = new Map(); const merged = [];
   list.forEach(c => {
@@ -2551,7 +2576,7 @@ $('#updYes').onclick = () => {
 $('#updNo').onclick = () => { setMode(S.updPrev && S.updPrev !== 'upd' ? S.updPrev : 'watch'); };
 
 /* ---------- Настройки ---------- */
-const fEls = () => [$('#btnPair'), $('#inM3u'), $('#inEpg'), $('#inVp'), $('#btnSave'), $('#btnDemo'), $('#btnClose'), $('#btnDiag'), $('#btnGroups'), $('#btnAutoQ'), $('#btnFx')];
+const fEls = () => [$('#btnPair'), $('#inM3u'), $('#inEpg'), $('#inVp'), $('#btnSave'), $('#btnDemo'), $('#btnClose'), $('#btnDiag'), $('#btnGroups'), $('#btnAutoQ'), $('#btnFx'), $('#btnView'), $('#btnPls'), $('#btnPlsDel')];
 function openSettings(first) {
   hideSplash();
   $('#inM3u').value = store.get('m3u', ''); $('#inEpg').value = store.get('epg', '');
@@ -2563,7 +2588,7 @@ function openSettings(first) {
   const auto = store.get('epgAuto', '');
   setStatus(auto && !store.get('epg', '') ? 'Телепрограмма подключена из плейлиста автоматически.' : '');
   $('#verLabel').textContent = 'Версия ' + BUILD + '.'; $('#diagOut').textContent = '';
-  setMode('settings'); renderSettings();
+  plsLabels(); setMode('settings'); renderSettings();
 }
 function renderSettings() {
   fEls().forEach((el, i) => (el.tagName === 'INPUT' ? el.parentNode : el).classList.toggle('focused', i === S.sf));
@@ -2582,7 +2607,7 @@ function setKey(k) {
   if (k === 'up') return settingsMove(-1);
   if (k === 'down') return settingsMove(1);
   if (k === 'left' && S.sf > 4) S.sf--;
-  else if (k === 'right' && S.sf >= 4 && S.sf < 10) S.sf++;
+  else if (k === 'right' && S.sf >= 4 && S.sf < fEls().length - 1) S.sf++;
   else if (k === 'ok') { const el = fEls()[S.sf]; if (el.tagName === 'INPUT') el.focus(); else el.click(); return; }
   renderSettings();
 }
@@ -2596,14 +2621,14 @@ $('#btnSave').onclick = async () => {
   store.set('vportal', vp);
   applyPlaylist(m, e, setStatus);
 };
-async function applyPlaylist(m, e, report) {
+async function applyPlaylist(m, e, report, name) {
   store.set('m3u', m); store.set('epg', e || ''); store.set('demo', false); store.set('epgAuto', '');
   report('Загружаю плейлист…');
   try {
     const list = parseM3U(await fetchVia(m, 20000, true));
     if (!list.length) throw new Error('в плейлисте нет каналов');
-    S.demo = false; setChannels(list); store.set('cache', list);
-    report(`Загружено каналов: ${list.length}`);
+    S.demo = false; setChannels(list); store.set('cache', list); plsRemember(m, name); plsLabels();
+    report(`Загружено каналов: ${S.channels.length}`);
     setTimeout(() => { startLast(); startEPG(epgUrl()); }, 700);
     return true;
   } catch (err) { report('Не удалось загрузить плейлист: ' + err.message, true); return false; }
@@ -2676,7 +2701,7 @@ async function handlePairLine(line, P) {
   $('#pairWait').textContent = 'Телефон подключён. Загружаю каналы…';
   if (typeof data.vp === 'string' && (data.vp === '' || vpParse(data.vp))) store.set('vportal', data.vp);
   const ok = await applyPlaylist(data.m3u, /^https?:\/\//i.test(data.epg || '') ? data.epg : '',
-    (msg, err) => { $('#pairWait').textContent = msg; if (err) toast(msg, 6000); });
+    (msg, err) => { $('#pairWait').textContent = msg; if (err) toast(msg, 6000); }, typeof data.name === 'string' ? data.name.trim().slice(0, 40) : '');
   if (!ok) setTimeout(() => openSettings(), 2500);
   return true;
 }
@@ -2699,7 +2724,7 @@ $('#lnSend').onclick = async () => {
   lnStatus('Отправляю…');
   try {
     const vp = $('#lnVp').value.trim();
-    const r = await fetch(PAIR_HUB + code, { method: 'POST', body: JSON.stringify({ m3u: m, epg: e, vp }) });
+    const r = await fetch(PAIR_HUB + code, { method: 'POST', body: JSON.stringify({ m3u: m, epg: e, vp, name: $('#lnName').value.trim() }) });
     store.set('vportal', vp);
     if (r.status === 429) throw new Error('сервер подключения просит подождать минуту');
     if (!r.ok) throw new Error('сервер ответил ' + r.status);
@@ -2709,6 +2734,29 @@ $('#lnSend').onclick = async () => {
 };
 $('#btnDemo').onclick = () => startDemo();
 $('#btnClose').onclick = () => closeSettings();
+function plsLabels() {
+  $('#btnView').textContent = 'Подборка: ' + curView().name;
+  const l = plsList(), m = store.get('m3u', ''), i = l.findIndex(p => p.url === m);
+  $('#btnPls').textContent = l.length > 1 ? `Плейлист: ${i >= 0 ? l[i].name : '—'} (${i + 1} из ${l.length})` : 'Плейлист: ' + (i >= 0 ? l[i].name : 'не выбран');
+  $('#btnPlsDel').style.display = l.length > 1 ? '' : 'none';
+}
+$('#btnView').onclick = () => {
+  const i = VIEW_LIST.findIndex(v => v.id === curView().id); store.set('view', VIEW_LIST[(i + 1) % VIEW_LIST.length].id);
+  plsLabels();
+  if (S.demo || !S.raw) return setStatus('Подборки работают с вашим плейлистом, не с демо-каналами.');
+  setChannels(S.raw); setStatus(`${curView().name}: ${S.channels.length} каналов. Нажмите «Закрыть», чтобы смотреть.`);
+  startEPG(epgUrl());
+};
+$('#btnPls').onclick = () => {
+  const l = plsList(); if (l.length < 2) return setStatus('Сохранён один плейлист. Новый добавится сам, когда вы загрузите другую ссылку (здесь или с телефона).');
+  const i = l.findIndex(p => p.url === store.get('m3u', '')); const nx = l[(i + 1) % l.length];
+  applyPlaylist(nx.url, store.get('epg', ''), setStatus, nx.name);
+};
+$('#btnPlsDel').onclick = () => {
+  const l = plsList(), m = store.get('m3u', ''); if (l.length < 2) return;
+  const rest = l.filter(p => p.url !== m); store.set('pls', rest); plsLabels();
+  applyPlaylist(rest[0].url, store.get('epg', ''), setStatus, rest[0].name);
+};
 async function peek(url) {
   const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 12000);
   try {
@@ -2782,7 +2830,7 @@ async function boot() {
   try {
     const list = parseM3U(await fetchVia(m3u, 20000, true));
     if (!list.length) throw new Error('в плейлисте нет каналов');
-    setChannels(list); store.set('cache', list);
+    setChannels(list); store.set('cache', list); plsRemember(m3u);
   } catch (err) {
     const cache = store.get('cache', null);
     if (cache && cache.length) { setChannels(cache); toast('Плейлист не обновился, показываю сохранённый список.'); }
