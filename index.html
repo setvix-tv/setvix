@@ -380,7 +380,11 @@ body.native #prog .pg-right,body.native #prog .pg-card{position:relative;z-index
 .m-vars .vl{width:100%;margin:.6rem 0 0}
 
 /* Logos are transparent; a colored tile only for channels without a logo */
-.card-art.nologo,.llogo.nologo,.osd-logo.nologo{background:linear-gradient(140deg,hsl(var(--h) 30% 24%),hsl(calc(var(--h) + 40) 35% 14%))}
+.card-art.nologo,.llogo.nologo,.osd-logo.nologo{background:rgba(237,240,246,.07)}
+.nologo em{color:rgba(237,240,246,.7)!important;font-weight:600!important;letter-spacing:.02em}
+/* One-tone logos everywhere; full color only on the focused item */
+.card-art img,.llogo img,.osd-logo img,.hero-logo img,#loader .ldlogo img{filter:grayscale(1) brightness(1.25) contrast(1.05);transition:filter .3s}
+.card.focused .card-art img,.li.sel .llogo img,.g-row.sel .llogo img,.hero-logo img{filter:none}
 .card-art img,.llogo img,.osd-logo img{filter:drop-shadow(0 .2rem .6rem rgba(0,0,0,.45))}
 
 /* The old banner is replaced by the shared panel */
@@ -432,6 +436,48 @@ body.mob #ctl{display:none!important}
 .hero-logo img{height:100%;max-width:14rem;object-fit:contain;filter:drop-shadow(0 .3rem .8rem rgba(0,0,0,.5))}
 .row-title{font-family:var(--sans);font-size:1.3rem;letter-spacing:.005em}
 
+.brand small{font:500 1rem var(--sans);color:var(--muted);margin-left:1rem;letter-spacing:0}
+#settings .sheet{max-height:94vh;overflow:auto}
+.st-h{font-weight:600;font-size:1rem;color:var(--muted);margin:1.6rem 0 -.6rem}
+.st-pls button.on{box-shadow:inset 0 0 0 .15rem rgba(242,181,68,.7)}
+.st-pls button.on:before{content:"\25CF  ";color:var(--amber)}
+.hidden-more{display:none}
+.hidden-more.open{display:block;margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid var(--line)}
+#btnClose{margin-left:auto}
+/* ---------- v4.2: live guide (Google TV style) ---------- */
+#guide{background:var(--deep);padding:2.2rem 3rem 1.6rem}
+.g-top{display:flex;gap:2.4rem;align-items:flex-start;height:15.5rem;flex:none}
+.g-info{flex:1;min-width:0;display:flex;gap:1.4rem;align-items:flex-start;padding-top:.6rem}
+.g-info .llogo{width:7rem;height:4.4rem;flex:none}
+.g-info h2{font-size:2.3rem!important;margin:0 0 .5rem}
+.g-info p{margin:.35rem 0 0!important}
+.g-info .bdg{margin-left:0;margin-right:.45rem}
+.g-info .gl{color:var(--amber);font-weight:600}
+#gVid{width:26rem;aspect-ratio:16/9;flex:none;border-radius:.9rem;background:#000;box-shadow:0 1.2rem 2.6rem rgba(0,0,0,.5)}
+body.native #guide{background:transparent}
+body.native #gVid{background:transparent;box-shadow:0 0 0 200vmax var(--deep);outline:.12rem solid rgba(237,240,246,.14)}
+body.native #guide > :not(.g-top),body.native .g-info{position:relative;z-index:1}
+.g-chips{display:flex;gap:.6rem;margin:1rem 0 .4rem;overflow:hidden;white-space:nowrap;flex:none}
+.g-chips span{padding:.55rem 1.2rem;border-radius:2rem;font-weight:600;font-size:1rem;border:1px solid rgba(237,240,246,.22);color:var(--text);flex:none}
+.g-chips span.on{background:rgba(237,240,246,.9);color:var(--night);border-color:transparent}
+.g-chips.foc span.on{background:#fff;box-shadow:0 0 0 .2rem var(--amber)}
+.g-times{left:26.6rem!important}
+.g-ch{width:25.8rem!important;gap:1rem!important;background:transparent!important;padding:0 .4rem!important}
+.g-ch .llogo{width:5.4rem;height:3.6rem}
+.g-ch .gt{min-width:0;flex:1}
+.g-ch .gt b{display:block;font-size:1.02rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.g-ch .gt small{display:block;color:var(--muted);font-size:.85rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:.2rem}
+.g-row.sel .g-ch{background:rgba(237,240,246,.06)!important;border-radius:.7rem}
+.g-p{background:rgba(237,240,246,.05)!important;border-left:0!important;border-radius:.6rem!important}
+.g-p.now{background:rgba(237,240,246,.1)!important}
+.g-p.arch b:before{content:"\27F2  ";color:var(--amber)}
+.g-p.past{opacity:.45}
+.g-p.fut{opacity:.8}
+.g-p.sel{background:#fff!important;color:var(--night)!important;opacity:1!important}
+.g-p.sel small{color:rgba(12,20,36,.6)!important}
+.g-now{background:#fff!important;width:2px!important}
+.g-now span{position:absolute;top:-2.3rem;left:50%;transform:translateX(-50%);font-weight:700;font-size:.95rem;white-space:nowrap}
+.g-now span:after{content:"";display:block;width:0;height:0;margin:.15rem auto 0;border:.35rem solid transparent;border-top-color:#fff}
 /* ---------- v4: badges, mini-player on Home, OK panel on the left ---------- */
 .bdg{display:inline-block;font:700 .62rem/1 var(--sans);letter-spacing:.07em;padding:.24rem .4rem .22rem;border-radius:.28rem;border:1px solid rgba(237,240,246,.38);color:rgba(237,240,246,.88);vertical-align:.14em;margin-right:.4rem;white-space:nowrap}
 .bdg.f{background:rgba(237,240,246,.14);border-color:transparent}
@@ -592,7 +638,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 
 <section id="home" class="layer hidden">
   <header id="topbar">
-    <div class="brand">Setvix<i></i></div>
+    <div class="brand">Setvix<i></i><small id="srcName"></small></div>
     <button class="tb" data-tb="0">Search</button>
     <button class="tb" data-tb="1">TV Guide</button>
     <button class="tb" data-tb="2">All channels</button>
@@ -630,24 +676,29 @@ body.mob #vod,body.mob #vodd{z-index:9}
     <h2>Settings</h2>
     <p class="sub" id="setIntro"></p>
     <button id="btnPair" class="pair-btn">Connect from phone</button>
-    <p class="or">or enter the links manually</p>
-    <label class="field"><span>M3U playlist</span><input id="inM3u" type="url" inputmode="url" placeholder="https://…/playlist.m3u" autocomplete="off" spellcheck="false"></label>
-    <label class="field"><span>TV guide XMLTV (.gz is fine). If empty, taken from the playlist</span><input id="inEpg" type="url" inputmode="url" placeholder="https://…/epg.xml.gz" autocomplete="off" spellcheck="false"></label>
-    <label class="field"><span>VPortal movie library (optional)</span><input id="inVp" type="text" placeholder="portal::[key:…]http://…/api/v1/" autocomplete="off" spellcheck="false"></label>
+    <h3 class="st-h">Playlists</h3>
+    <div class="btns st-pls" id="plsChips"></div>
+    <h3 class="st-h">Viewing</h3>
     <div class="btns">
-      <button id="btnSave">Save and load</button>
-      <button id="btnDemo">Demo channels</button>
-      <button id="btnClose">Close</button>
-      <button id="btnDiag">Test channel</button>
+      <button id="btnView"></button>
       <button id="btnGroups">Channel categories</button>
       <button id="btnAutoQ"></button>
-      <button id="btnFx"></button>
-      <button id="btnView"></button>
-      <button id="btnPls"></button>
-      <button id="btnPlsDel">Remove this playlist</button>
+    </div>
+    <div class="btns"><button id="btnMore">More settings</button><button id="btnClose">Close</button></div>
+    <div id="setMore" class="hidden-more">
+      <label class="field"><span>M3U playlist link</span><input id="inM3u" type="url" inputmode="url" placeholder="https://…/playlist.m3u" autocomplete="off" spellcheck="false"></label>
+      <label class="field"><span>TV guide XMLTV (optional)</span><input id="inEpg" type="url" inputmode="url" placeholder="https://…/epg.xml.gz" autocomplete="off" spellcheck="false"></label>
+      <label class="field"><span>VPortal movie library (optional)</span><input id="inVp" type="text" placeholder="portal::[key:…]http://…/api/v1/" autocomplete="off" spellcheck="false"></label>
+      <div class="btns">
+        <button id="btnSave">Save and load</button>
+        <button id="btnPlsDel">Remove this playlist</button>
+        <button id="btnDiag">Test channel</button>
+        <button id="btnFx"></button>
+        <button id="btnDemo">Demo channels</button>
+      </div>
     </div>
     <p id="setStatus" class="status"></p>
-    <p class="tip">Remote: arrows move the selection, OK opens a field or presses a button. <span id="verLabel"></span></p>
+    <p class="tip"><span id="verLabel"></span></p>
     <pre id="diagOut" class="diag"></pre>
   </div>
 </section>
@@ -767,14 +818,15 @@ body.mob #vod,body.mob #vodd{z-index:9}
 </section>
 
 <section id="guide" class="layer hidden">
-  <div class="g-head">
+  <div class="g-top">
     <div class="g-info" id="gInfo"></div>
-    <span class="clock"></span>
+    <div id="gVid"></div>
   </div>
+  <div class="g-chips" id="gChips"></div>
   <div class="g-grid">
     <div class="g-times" id="gTimes"></div>
     <div class="g-rows" id="gRows"></div>
-    <div class="g-now" id="gNow"></div>
+    <div class="g-now" id="gNow"><span id="gNowT"></span></div>
   </div>
 </section>
 
@@ -814,7 +866,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.1'; // bumped with every release
+const BUILD = '4.2'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -965,6 +1017,7 @@ const VIEWS = {"top":{"Общие":["Первый канал","Россия 1","
 const VIEW_LIST = [{ id: 'all', name: 'All channels' }, { id: 'top', name: 'Top 550' }, { id: 'let', name: 'Partner outreach' }];
 const curView = () => VIEW_LIST.find(v => v.id === store.get('view', 'all')) || VIEW_LIST[0];
 function applyView(list) {
+  if (store.get('m3u', '') === FREE_URL) return list; // collections are for big playlists, not the free base
   const v = VIEWS[curView().id]; if (!v) return list;
   const map = new Map(); Object.entries(v).forEach(([g, arr]) => arr.forEach(b => { if (!map.has(b)) map.set(b, g); }));
   const out = [];
@@ -1042,9 +1095,56 @@ function badges(ch, opt) {
   if (ch.cu && ch.cuDays) out.push(`<span class="bdg a">&#10226; ${ch.cuDays}D</span>`);
   return out.slice(0, o.full ? 5 : 3).join('');
 }
-const plsList = () => store.get('pls', []);
+/* Built-in free base: official streams published by the broadcasters themselves (no keys, no resellers) */
+const FREE_URL = 'setvix:free', FREE_NAME = 'Setvix Free';
+const FREE_M3U = `#EXTM3U
+#EXTINF:-1 tvg-country="GE" group-title="Georgia",1TV GE
+https://tv.cdn.xsg.ge/gpb-1tv/index.m3u8
+#EXTINF:-1 tvg-country="GE" group-title="Georgia",2TV GE
+https://tv.cdn.xsg.ge/gpb-2tv/index.m3u8
+#EXTINF:-1 tvg-country="GE" group-title="Georgia",Imedi GE
+https://tv.cdn.xsg.ge/imedihd/index.m3u8
+#EXTINF:-1 tvg-country="GE" group-title="Georgia",Formula GE
+https://c4635.cdn.xsg.ge/c4635/TVFormula/index.m3u8
+#EXTINF:-1 tvg-country="GE" group-title="Georgia",Pos TV GE
+https://live.postv.media/stream/index.m3u8
+#EXTINF:-1 tvg-country="AM" group-title="Armenia",Armenia 1 AM
+https://amtv1.livestreamingcdn.com/am2abr/index.m3u8
+#EXTINF:-1 tvg-country="TR" group-title="Turkey",TRT 1 TR
+https://tv-trt1.medya.trt.com.tr/master.m3u8
+#EXTINF:-1 tvg-country="TR" group-title="Turkey",TRT Haber TR
+https://tv-trthaber.medya.trt.com.tr/master.m3u8
+#EXTINF:-1 tvg-country="TR" group-title="Turkey",TRT World TR
+https://tv-trtworld.medya.trt.com.tr/master.m3u8
+#EXTINF:-1 tvg-country="TR" group-title="Turkey",TRT Türk TR
+https://tv-trtturk.medya.trt.com.tr/master.m3u8
+#EXTINF:-1 tvg-country="TR" group-title="Turkey",TRT Çocuk TR
+https://tv-trtcocuk.medya.trt.com.tr/master.m3u8
+#EXTINF:-1 tvg-country="EE" group-title="Estonia",ETV+ EE
+http://sb.err.ee/live/etvpluss.m3u8
+#EXTINF:-1 tvg-country="EE" group-title="Estonia",ETV EE
+http://sb.err.ee/live/etv.m3u8
+#EXTINF:-1 tvg-country="DE" group-title="Germany",Das Erste DE
+https://daserste-live.ard-mcdn.de/daserste/live/hls/de/master.m3u8
+#EXTINF:-1 tvg-country="DE" group-title="Germany",ZDF DE
+https://zdf-hls-15.akamaized.net/hls/live/2016498/de/veryhigh/master.m3u8
+#EXTINF:-1 tvg-country="DE" group-title="Germany",Tagesschau24 DE
+https://tagesschau.akamaized.net/hls/live/2020115/tagesschau/tagesschau_1/master.m3u8
+#EXTINF:-1 tvg-country="DE" group-title="Germany",Welt DE
+https://w-live2weltcms.akamaized.net/hls/live/2041019/Welt-LivePGM/index.m3u8
+#EXTINF:-1 tvg-country="DK" group-title="Denmark",DR1 DK
+https://drlive01texthls.akamaized.net/hls/live/2014186/drlive01text/master.m3u8
+#EXTINF:-1 tvg-country="FR" group-title="France",TV5 Monde Europe FR
+https://ott.tv5monde.com/Content/HLS/Live/channel(europe)/index.m3u8
+#EXTINF:-1 tvg-country="FR" group-title="France",TV5 Monde Info FR
+https://ott.tv5monde.com/Content/HLS/Live/channel(info)/index.m3u8
+#EXTINF:-1 tvg-country="FR" group-title="France",CGTN Français
+https://news.cgtn.com/resource/live/french/cgtn-f.m3u8`;
+const plsList = () => store.get('pls', []).filter(p => p.url !== FREE_URL);
+const getPlaylistText = (u, ms, strict) => u === FREE_URL ? Promise.resolve(FREE_M3U) : fetchVia(u, ms, strict);
 function plsName(url) { try { return new URL(url).hostname.replace(/^[^.]+\.(?=[^.]+\.[^.]+$)/, ''); } catch (e) { return 'Playlist'; } }
 function plsRemember(url, name) {
+  if (url === FREE_URL) return;
   const l = plsList(); const i = l.findIndex(p => p.url === url);
   if (i >= 0) { if (name) l[i].name = name; } else l.push({ name: name || plsName(url) + (l.length ? ' ' + (l.length + 1) : ''), url });
   store.set('pls', l.slice(-10));
@@ -1622,7 +1722,7 @@ function setMode(m) {
   $('#info').classList.toggle('hidden', m !== 'info');
   $('#vod').classList.toggle('hidden', m !== 'vod');
   $('#vodd').classList.toggle('hidden', m !== 'vodd');
-  if (typeof updateVideoRect === 'function') { setTimeout(updateVideoRect, 30); if (m === 'prog' || m === 'list') setTimeout(updateVideoRect, 500); }
+  if (typeof updateVideoRect === 'function') { setTimeout(updateVideoRect, 30); if (m === 'prog' || m === 'list' || m === 'guide') setTimeout(updateVideoRect, 500); }
   if (m !== 'pair' && S.pair) stopPair();
   if (m !== 'watch') { hideOSD(); $('#cuHint').classList.remove('show'); }
   if (m !== 'ctl') { clearTimeout(S.ctlT); if (S.pop) { S.pop = null; $('#ctlPop').classList.add('hidden'); } }
@@ -2181,7 +2281,7 @@ function ctlButtons() {
   b.push({ id: 'q', icon: IC.hd, t: qNow, act: () => { if (vq.length) openPop(vq); else toast('This channel has only one quality', 2500); } });
   if (vz.length) { const on = vz.find(c => c.on); b.push({ id: 'z', icon: IC.clock, t: on ? on.t : 'Time zone', act: () => openPop(vz) }); }
   b.push({ id: 'list', icon: IC.list, t: 'Channels', act: () => openList() });
-  b.push({ id: 'prog', icon: IC.guide, t: 'Guide', act: () => openProg() });
+  b.push({ id: 'prog', icon: IC.guide, t: 'Guide', act: () => openGuide(S.cur) });
   { const nn0 = ch ? nowNext(ch) : {}; if (ch && !S.archive && nn0.now && archiveUrl(ch, nn0.now)) b.push({ id: 'start', icon: IC.clock, t: 'From start', act: () => playArchive(S.cur, nn0.now) }); }
   b.push({ id: 'info', icon: IC.info, ic: true, act: () => openInfo() });
   b.push({ id: 'fav', icon: IC.star, ic: true, on: isFav(S.cur), act: () => { toggleFav(S.cur); renderCtl(); } });
@@ -2338,7 +2438,9 @@ $('#pgList').addEventListener('click', e => { const it = e.target.closest('.sc-i
 const LOGO_API = 'https://iptv-org.github.io/api/';
 const lnorm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/ё/g, 'е')
   .replace(/\s+(uhd|4k|fhd|hd|sd|orig|50)\b/g, '').replace(/[^\p{L}\p{N}]+/gu, '');
-const lnorm2 = s => lnorm(String(s || '').replace(/\b(tv|тв|channel|канал)\b/gi, ''));
+const TR = { а: 'a', б: 'b', в: 'v', г: 'g', ґ: 'g', д: 'd', е: 'e', є: 'ye', ж: 'zh', з: 'z', и: 'i', і: 'i', ї: 'yi', й: 'y', к: 'k', л: 'l', м: 'm', н: 'n', о: 'o', п: 'p', р: 'r', с: 's', т: 't', у: 'u', ф: 'f', х: 'kh', ц: 'ts', ч: 'ch', ш: 'sh', щ: 'shch', ъ: '', ы: 'y', ь: '', э: 'e', ю: 'yu', я: 'ya' };
+const translit = s => String(s || '').toLowerCase().replace(/[а-яёґєії]/g, c => TR[c === 'ё' ? 'е' : c] ?? c);
+const lnorm2 = s => lnorm(translit(s).replace(/\b(tv|channel|kanal)\b/gi, ''));
 function applyLogoMap() {
   const lg = store.get('logoMap', {}); let n = 0;
   S.channels.forEach(c => { if (!c.logo && lg[c.name]) { c.logo = lg[c.name]; n++; } });
@@ -2347,6 +2449,7 @@ function applyLogoMap() {
 }
 async function fetchLogos(force) {
   if (S.demo || S.logoBusy) return; applyLogoMap();
+  if (store.get('logoV', 0) < 2) { force = true; store.set('logoV', 2); }
   const need = S.channels.filter(c => !c.logo); if (!need.length) return;
   if (!force && Date.now() - store.get('logoTs', 0) < 14 * 86400e3 && need.every(c => store.get('logoMiss', {})[c.name])) return;
   S.logoBusy = true;
@@ -2363,15 +2466,15 @@ async function fetchLogos(force) {
     const map = store.get('logoMap', {}), miss = {}; let n = 0;
     need.forEach(ch => {
       const cc = ccOf(ch), base = ch.name.replace(/\s[A-Z]{2}$/, '');
-      const cands = idx.get(lnorm(base)) || idx.get('~' + lnorm2(base)) || [];
+      const cands = idx.get(lnorm(base)) || idx.get(lnorm(translit(base))) || idx.get('~' + lnorm2(base)) || [];
       const want = cc === 'UK' ? 'GB' : cc;
       const pick = cands.find(c => want && c.country === want && (best.get(c.id) || c.logo)) || cands.find(c => best.get(c.id) || c.logo);
       const url = pick && ((best.get(pick.id) || {}).url || pick.logo);
       if (url) { map[ch.name] = url; n++; } else miss[ch.name] = 1;
     });
-    store.set('logoMap', map); store.set('logoMiss', miss); store.set('logoTs', Date.now());
+    store.set('logoMap', map); store.set('logoMiss', miss); store.set('logoTs', Date.now()); store.set('logoStat', `${n} logos found, ${Object.keys(miss).length} not found`);
     applyLogoMap();
-  } catch (e) { /* no logos this time; letters stay */ }
+  } catch (e) { store.set('logoStat', 'logo database unavailable: ' + (e && e.message || e)); }
   S.logoBusy = false;
 }
 
@@ -2618,7 +2721,7 @@ function optsKey(k) {
 $('#optsList').addEventListener('click', e => { const it = e.target.closest('.opt'); if (!it) return; S.of = +it.dataset.i; const o = S.optIt[S.of]; if (o) o.act(); });
 
 /* ---------- TV guide grid (like TiviMate) ---------- */
-const G_SPAN = 150 * 60000, G_ROWS = 7, G_ROWH = 5.6;
+const G_SPAN = 120 * 60000, G_ROWS = 5, G_ROWH = 5.4;
 const half = t => Math.floor(t / 1800000) * 1800000;
 function progsAround(ci, t0, t1) {
   const ch = S.channels[ci]; const a = ch && ch.epgId ? S.epg.get(ch.epgId) : null;
@@ -2626,69 +2729,92 @@ function progsAround(ci, t0, t1) {
   return list.length ? list : [{ s: t0, e: t1, t: S.epgLoading ? 'TV guide is loading' : 'No TV guide', none: true }];
 }
 function gFocusProg() {
-  const g = S.gf; const list = progsAround(g.ci, g.t - 12 * 3600e3, g.t + 12 * 3600e3);
+  const g = S.gf; if (g.ci == null) g.ci = gList()[g.pos]; const list = progsAround(g.ci, g.t - 12 * 3600e3, g.t + 12 * 3600e3);
   return list.find(p => p.s <= g.t && g.t < p.e) || list.reduce((b, p) => (Math.abs(p.s - g.t) < Math.abs(b.s - g.t) ? p : b), list[0]);
+}
+function guideCats() {
+  const all = S.channels.map((_, i) => i), fav = favList(), rec = S.recent.map(k => S.byKey.get(k)).filter(i => i != null);
+  return [{ t: 'All channels', items: all }].concat(fav.length ? [{ t: 'Favorites', items: fav }] : [], rec.length ? [{ t: 'Recently watched', items: rec }] : [],
+    S.groups.length > 1 ? S.groups.map(g => ({ t: gLabel(g.title), items: g.items })) : []);
 }
 function openGuide(ci) {
   if (!S.channels.length) return openSettings(true);
-  S.gf = { ci: Math.max(0, ci), t: Date.now() };
+  S.gcats = guideCats();
+  const c = Math.max(0, ci);
+  S.gf = { cat: 0, pos: Math.max(0, S.gcats[0].items.indexOf(c)), t: Date.now(), top: false };
   S.gt0 = half(Date.now()) - 1800000;
   setMode('guide'); renderGuide();
 }
+const gList = () => (S.gcats[S.gf.cat] || S.gcats[0]).items;
+const minsLeft = p => Math.max(1, Math.round((p.e - Date.now()) / 60000));
 function renderGuide() {
   const g = S.gf; if (!g) return;
+  const list = gList(); g.pos = Math.max(0, Math.min(g.pos, list.length - 1)); g.ci = list[g.pos];
   const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  const W = innerWidth / remPx - 6 - 18;
+  const W = innerWidth / remPx - 6 - 26.6;
   const t0 = S.gt0, t1 = t0 + G_SPAN, k = W / G_SPAN, now = Date.now();
+  /* category chips */
+  const [ca, cb] = win(S.gcats.length, g.cat, 9);
+  $('#gChips').classList.toggle('foc', g.top);
+  $('#gChips').innerHTML = S.gcats.slice(ca, cb).map((c, j) => `<span class="${ca + j === g.cat ? 'on' : ''}">${esc(c.t)}</span>`).join('');
   let times = ''; for (let t = t0; t < t1; t += 1800000) times += `<b style="left:${((t - t0) * k).toFixed(2)}rem">${tm(t)}</b>`;
   $('#gTimes').innerHTML = times;
-  const n = S.channels.length;
-  const start = Math.max(0, Math.min(g.ci - 2, n - G_ROWS));
+  const n = list.length, start = Math.max(0, Math.min(g.pos - 2, n - G_ROWS));
   const fp = gFocusProg();
   let html = '';
   for (let r = 0; r < G_ROWS && start + r < n; r++) {
-    const ci = start + r, ch = S.channels[ci];
+    const ci = list[start + r], ch = S.channels[ci], nn = nowNext(ch), selRow = start + r === g.pos;
     const progs = progsAround(ci, t0, t1);
-    html += `<div class="g-row" style="top:${(r * G_ROWH).toFixed(2)}rem"><div class="g-ch${isFav(ci) ? ' fav' : ''}"><span class="num">${ch.num}</span>${logoBox(ch, 'llogo')}<b>${esc(ch.name)}</b></div><div class="g-progs">` +
+    html += `<div class="g-row${selRow ? ' sel' : ''}" style="top:${(r * G_ROWH).toFixed(2)}rem"><div class="g-ch${isFav(ci) ? ' fav' : ''}">${logoBox(ch, 'llogo')}` +
+      `<div class="gt"><b>${esc(nn.now ? nn.now.t : ch.name)}</b><small>${esc(ch.name)}${nn.now ? ` · ${minsLeft(nn.now)} min left` : ''}</small></div></div><div class="g-progs">` +
       progs.map(p => {
         const l = Math.max(0, (p.s - t0) * k), w = Math.max(1.5, (Math.min(p.e, t1) - Math.max(p.s, t0)) * k - .3);
-        const cls = ['g-p', p.s <= now && now < p.e ? 'now' : '', p.e <= now ? (archiveUrl(ch, p) ? 'arch' : 'past') : '', ci === g.ci && fp && p.s === fp.s && !p.none === !fp.none ? 'sel' : ''].join(' ');
+        const cls = ['g-p', p.s <= now && now < p.e ? 'now' : p.e <= now ? (archiveUrl(ch, p) ? 'arch' : 'past') : 'fut', !g.top && selRow && fp && p.s === fp.s && !p.none === !fp.none ? 'sel' : ''].join(' ');
         return `<div class="${cls}" style="left:${l.toFixed(2)}rem;width:${w.toFixed(2)}rem"><b>${esc(p.t)}</b><small>${p.none ? '' : tm(p.s) + '–' + tm(p.e)}</small></div>`;
       }).join('') + '</div></div>';
   }
   $('#gRows').innerHTML = html;
   const nl = $('#gNow');
-  if (now > t0 && now < t1) { nl.style.display = ''; nl.style.left = `calc(18rem + ${((now - t0) * k).toFixed(2)}rem)`; } else nl.style.display = 'none';
-  const ch = S.channels[g.ci];
-  let badge = '';
+  if (now > t0 && now < t1) { nl.style.display = ''; nl.style.left = `calc(26.6rem + ${((now - t0) * k).toFixed(2)}rem)`; $('#gNowT').textContent = tm(now); } else nl.style.display = 'none';
+  const ch = S.channels[g.ci]; if (!ch) return;
+  let badge = '', extra = '';
   if (fp && !fp.none) {
-    if (fp.s <= now && now < fp.e) badge = '<span class="badge live">LIVE</span>';
-    else if (fp.e <= now) badge = archiveUrl(ch, fp) ? '<span class="badge">Catch-up: OK to watch</span>' : '';
-    else badge = '<span class="badge">Upcoming</span>';
+    if (fp.s <= now && now < fp.e) { badge = '<span class="bdg" style="background:var(--live);border-color:var(--live);color:#fff">LIVE</span>'; extra = ` · <span class="gl">${minsLeft(fp)} min left</span>`; }
+    else if (fp.e <= now) badge = archiveUrl(ch, fp) ? '<span class="bdg a">&#10226; Catch-up · OK to watch</span>' : '<span class="bdg">No recording</span>';
+    else badge = '<span class="bdg">Upcoming</span>';
   }
-  $('#gInfo').innerHTML = `<h2>${esc(fp ? fp.t : ch.name)}</h2><p>${esc(ch.num + '. ' + ch.name)}${fp && !fp.none ? ', ' + tm(fp.s) + '–' + tm(fp.e) : ''}${badge}</p>${fp && fp.d ? `<p>${esc(fp.d)}</p>` : ''}`;
+  $('#gInfo').innerHTML = `${logoBox(ch, 'llogo')}<div style="min-width:0"><h2>${esc(fp && !fp.none ? fp.t : ch.name)}</h2>` +
+    `<p>${badge}${badges(ch)}</p><p>${esc(ch.name)}${fp && !fp.none ? ` · ${dayName(fp.s)} ${tm(fp.s)}–${tm(fp.e)}` : ''}${extra}</p>` +
+    `${fp && fp.d ? `<p style="color:var(--muted);max-width:52rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(fp.d)}</p>` : ''}</div>`;
 }
 function guideKey(k) {
-  const g = S.gf, n = S.channels.length;
+  const g = S.gf, list = gList(), n = list.length;
   if (k === 'back') { setMode(S.cur >= 0 ? 'watch' : 'home'); return; }
-  if (k === 'up') g.ci = Math.max(0, g.ci - 1);
-  else if (k === 'down') g.ci = Math.min(n - 1, g.ci + 1);
-  else if (k === 'chup') g.ci = Math.max(0, g.ci - G_ROWS);
-  else if (k === 'chdown') g.ci = Math.min(n - 1, g.ci + G_ROWS);
+  if (g.top) {
+    /* category chips row */
+    if (k === 'left' || k === 'right') { g.cat = Math.max(0, Math.min(S.gcats.length - 1, g.cat + (k === 'right' ? 1 : -1))); g.pos = 0; }
+    else if (k === 'down' || k === 'ok') g.top = false;
+    renderGuide(); return;
+  }
+  if (k === 'up') { if (g.pos === 0) g.top = true; else g.pos--; }
+  else if (k === 'down') g.pos = Math.min(n - 1, g.pos + 1);
+  else if (k === 'chup') g.pos = Math.max(0, g.pos - G_ROWS);
+  else if (k === 'chdown') g.pos = Math.min(n - 1, g.pos + G_ROWS);
   else if (k === 'left' || k === 'right') {
     const p = gFocusProg();
     if (p.none) g.t += (k === 'right' ? 1800000 : -1800000);
     else g.t = k === 'right' ? p.e + 1000 : p.s - 1000;
     const np = gFocusProg(); if (!np.none && k === 'left') g.t = Math.max(np.s, g.t - 1);
-    const minT = Date.now() - 3 * 86400e3, maxT = Date.now() + 26 * 3600e3;
+    const ch = S.channels[g.ci], back = Math.max(1, ch && ch.cuDays ? ch.cuDays : 1);
+    const minT = Date.now() - back * 86400e3, maxT = Date.now() + 26 * 3600e3;
     g.t = Math.max(minT, Math.min(maxT, g.t));
     if (g.t < S.gt0 + 600000) S.gt0 = half(g.t) - 1800000;
     if (g.t > S.gt0 + G_SPAN - 1800000) S.gt0 = half(g.t) - 1800000;
   }
   else if (k === 'ok') {
     const p = gFocusProg(), now = Date.now();
-    if (p.none || (p.s <= now && now < p.e)) { playAndWatch(g.ci); return; }
-    if (p.e <= now) { playArchive(g.ci, p); return; }
+    if (p.none || (p.s <= now && now < p.e)) { playAndWatch(g.ci, list); return; }
+    if (p.e <= now) { if (archiveUrl(S.channels[g.ci], p)) playArchive(g.ci, p); else toast('No recording for this show', 2500); return; }
     toast(`The show starts at ${tm(p.s)}`, 3000); return;
   }
   renderGuide();
@@ -2789,26 +2915,40 @@ $('#updYes').onclick = () => {
 $('#updNo').onclick = () => { setMode(S.updPrev && S.updPrev !== 'upd' ? S.updPrev : 'watch'); };
 
 /* ---------- Settings ---------- */
-const fEls = () => [$('#btnPair'), $('#inM3u'), $('#inEpg'), $('#inVp'), $('#btnSave'), $('#btnDemo'), $('#btnClose'), $('#btnDiag'), $('#btnGroups'), $('#btnAutoQ'), $('#btnFx'), $('#btnView'), $('#btnPls'), $('#btnPlsDel')];
+const fEls = () => [...document.querySelectorAll('#settings .sheet button, #settings .sheet input')].filter(el => el.offsetParent !== null);
 function openSettings(first) {
   hideSplash();
   $('#inM3u').value = store.get('m3u', ''); $('#inEpg').value = store.get('epg', '');
   $('#setIntro').textContent = first || !S.channels.length
     ? 'The easiest way is to connect from your phone, where it’s easy to paste the playlist link.'
     : 'Links are stored only on this device.';
-  S.sf = store.get('m3u', '') ? 4 : 0;
+  S.sf = 0; $('#setMore').classList.remove('open');
   $('#inVp').value = store.get('vportal', '');
   const auto = store.get('epgAuto', '');
   setStatus(auto && !store.get('epg', '') ? 'TV guide was taken from the playlist automatically.' : '');
-  $('#verLabel').textContent = 'Version ' + BUILD + '.'; $('#diagOut').textContent = '';
+  $('#verLabel').textContent = 'Version ' + BUILD + (store.get('logoStat', '') ? ' · ' + store.get('logoStat', '') : '') + '.'; $('#diagOut').textContent = '';
   plsLabels(); setMode('settings'); renderSettings();
 }
 function renderSettings() {
-  fEls().forEach((el, i) => (el.tagName === 'INPUT' ? el.parentNode : el).classList.toggle('focused', i === S.sf));
+  const els = fEls(); S.sf = Math.max(0, Math.min(S.sf, els.length - 1));
+  document.querySelectorAll('#settings .focused').forEach(e => e.classList.remove('focused'));
+  const el = els[S.sf]; if (!el) return;
+  (el.tagName === 'INPUT' ? el.parentNode : el).classList.add('focused');
+  try { el.scrollIntoView({ block: 'nearest' }); } catch (e) {}
 }
-function settingsMove(d) {
-  if (d < 0) S.sf = S.sf >= 4 ? 3 : Math.max(0, S.sf - 1);
-  else S.sf = S.sf < 4 ? S.sf + 1 : S.sf;
+/* Arrow keys move to the nearest control in that direction */
+function settingsMove(dir) {
+  const els = fEls(), cur = els[S.sf]; if (!cur) return;
+  const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  let best = -1, bd = Infinity;
+  els.forEach((el, i) => {
+    if (i === S.sf) return; const q = el.getBoundingClientRect(), x = q.left + q.width / 2, y = q.top + q.height / 2;
+    const dx = x - cx, dy = y - cy;
+    const ok = dir === 'up' ? dy < -4 : dir === 'down' ? dy > 4 : dir === 'left' ? (dx < -4 && Math.abs(dy) < r.height) : (dx > 4 && Math.abs(dy) < r.height);
+    if (!ok) return; const d = (dir === 'up' || dir === 'down') ? Math.abs(dy) * 3 + Math.abs(dx) : Math.abs(dx);
+    if (d < bd) { bd = d; best = i; }
+  });
+  if (best >= 0) S.sf = best;
   renderSettings();
 }
 function closeSettings() {
@@ -2817,14 +2957,12 @@ function closeSettings() {
 }
 function setKey(k) {
   if (k === 'back') return closeSettings();
-  if (k === 'up') return settingsMove(-1);
-  if (k === 'down') return settingsMove(1);
-  if (k === 'left' && S.sf > 4) S.sf--;
-  else if (k === 'right' && S.sf >= 4 && S.sf < fEls().length - 1) S.sf++;
-  else if (k === 'ok') { const el = fEls()[S.sf]; if (el.tagName === 'INPUT') el.focus(); else el.click(); return; }
+  if (k === 'up' || k === 'down' || k === 'left' || k === 'right') return settingsMove(k);
+  if (k === 'ok') { const el = fEls()[S.sf]; if (el.tagName === 'INPUT') el.focus(); else el.click(); return; }
   renderSettings();
 }
-fEls().forEach((el, i) => el.addEventListener('focus', () => { S.sf = i; renderSettings(); }));
+document.querySelectorAll('#settings input').forEach(el => el.addEventListener('focus', () => { S.sf = fEls().indexOf(el); renderSettings(); }));
+$('#btnMore').onclick = () => { const m = $('#setMore'); m.classList.toggle('open'); $('#btnMore').textContent = m.classList.contains('open') ? 'Fewer settings' : 'More settings'; renderSettings(); };
 $('#btnSave').onclick = async () => {
   const m = $('#inM3u').value.trim(), e = $('#inEpg').value.trim();
   if (!/^https?:\/\//i.test(m)) { setStatus('Paste a link that starts with http:// or https://', true); S.sf = 1; renderSettings(); return; }
@@ -2838,7 +2976,7 @@ async function applyPlaylist(m, e, report, name) {
   store.set('m3u', m); store.set('epg', e || ''); store.set('demo', false); store.set('epgAuto', '');
   report('Loading the playlist…');
   try {
-    const list = parseM3U(await fetchVia(m, 20000, true));
+    const list = parseM3U(await getPlaylistText(m, 20000, true));
     if (!list.length) throw new Error('the playlist has no channels');
     S.demo = false; setChannels(list); store.set('cache', list); plsRemember(m, name); plsLabels();
     report(`Channels loaded: ${S.channels.length}`);
@@ -2994,9 +3132,14 @@ $('#btnDemo').onclick = () => startDemo();
 $('#btnClose').onclick = () => closeSettings();
 function plsLabels() {
   $('#btnView').textContent = 'Collection: ' + curView().name;
-  const l = plsList(), m = store.get('m3u', ''), i = l.findIndex(p => p.url === m);
-  $('#btnPls').textContent = l.length > 1 ? `Playlist: ${i >= 0 ? l[i].name : '—'} (${i + 1} of ${l.length})` : 'Playlist: ' + (i >= 0 ? l[i].name : 'none');
-  $('#btnPlsDel').style.display = l.length > 1 ? '' : 'none';
+  const l = [{ name: FREE_NAME, url: FREE_URL }].concat(plsList()), m = store.get('m3u', '');
+  $('#plsChips').innerHTML = l.map(p => `<button class="${p.url === m ? 'on' : ''}" data-u="${esc(p.url)}">${esc(p.name)}</button>`).join('');
+  $('#plsChips').querySelectorAll('button').forEach(b => b.onclick = () => {
+    const p = l.find(x => x.url === b.dataset.u); if (!p || p.url === store.get('m3u', '')) return setStatus('This playlist is already on.');
+    applyPlaylist(p.url, p.url === FREE_URL ? '' : store.get('epg', ''), setStatus, p.name).then(() => { plsLabels(); renderSettings(); });
+  });
+  $('#btnPlsDel').style.display = m !== FREE_URL && plsList().length ? '' : 'none';
+  const cur = l.find(p => p.url === m); $('#srcName').textContent = cur ? cur.name : '';
 }
 $('#btnView').onclick = () => {
   const i = VIEW_LIST.findIndex(v => v.id === curView().id); store.set('view', VIEW_LIST[(i + 1) % VIEW_LIST.length].id);
@@ -3005,15 +3148,11 @@ $('#btnView').onclick = () => {
   setChannels(S.raw); setStatus(`${curView().name}: ${S.channels.length} channels. Press “Close” to watch.`);
   startEPG(epgUrl());
 };
-$('#btnPls').onclick = () => {
-  const l = plsList(); if (l.length < 2) return setStatus('Only one playlist is saved. A new one is added automatically when you load another link (here or from your phone).');
-  const i = l.findIndex(p => p.url === store.get('m3u', '')); const nx = l[(i + 1) % l.length];
-  applyPlaylist(nx.url, store.get('epg', ''), setStatus, nx.name);
-};
 $('#btnPlsDel').onclick = () => {
-  const l = plsList(), m = store.get('m3u', ''); if (l.length < 2) return;
-  const rest = l.filter(p => p.url !== m); store.set('pls', rest); plsLabels();
-  applyPlaylist(rest[0].url, store.get('epg', ''), setStatus, rest[0].name);
+  const m = store.get('m3u', ''); if (m === FREE_URL) return;
+  const rest = plsList().filter(p => p.url !== m); store.set('pls', rest);
+  const nx = rest[0] || { name: FREE_NAME, url: FREE_URL };
+  applyPlaylist(nx.url, nx.url === FREE_URL ? '' : store.get('epg', ''), setStatus, nx.name).then(() => { plsLabels(); renderSettings(); });
 };
 async function peek(url) {
   const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 12000);
@@ -3082,13 +3221,13 @@ async function boot() {
   if (p.get('m3u')) { store.set('m3u', p.get('m3u')); store.set('demo', false); }
   if (p.get('epg')) store.set('epg', p.get('epg'));
   if (store.get('demo', false)) { hintOnce(); return startDemo(); }
-  const m3u = store.get('m3u', '');
-  if (!m3u) return openSettings(true);
+  /* No playlist yet: start with the built-in free base so the app works right away */
+  const m3u = store.get('m3u', '') || FREE_URL; store.set('m3u', m3u);
   showLoader('Loading channels');
   try {
-    const list = parseM3U(await fetchVia(m3u, 20000, true));
+    const list = parseM3U(await getPlaylistText(m3u, 20000, true));
     if (!list.length) throw new Error('the playlist has no channels');
-    setChannels(list); store.set('cache', list); plsRemember(m3u);
+    setChannels(list); store.set('cache', list); plsRemember(m3u); plsLabels();
   } catch (err) {
     const cache = store.get('cache', null);
     if (cache && cache.length) { setChannels(cache); toast('The playlist didn’t refresh, showing the saved list.'); }
@@ -3139,7 +3278,7 @@ function watchKey(k) {
   else if (k === 'left' || k === 'chdown') zap(-1);
   else if (k === 'ok') { if (S.muteHint) { video.muted = false; S.muteHint = false; toast('Sound on', 2000); } else openList(); }
   else if (k === 'down') openCtl();
-  else if (k === 'up') openProg();
+  else if (k === 'up') openGuide(S.cur);
   else if (k === 'menu') openOpts();
   else if (k === 'back') { if (S.osdOn) hideOSD(); else openHome(); }
   else if (k === 'guide') openGuide(S.cur);
@@ -3279,8 +3418,8 @@ function layoutRect(el) {
 function updateVideoRect() {
   const pip = S.mode === 'home' && S.cur >= 0 && !S.vod && !MOB();
   document.body.classList.toggle('pip', pip);
-  const mini = (S.mode === 'prog' || S.mode === 'list' || pip) && !MOB();
-  const box = S.mode === 'list' ? $('#lsVid') : pip ? $('#homeVid') : $('#pgVid');
+  const mini = (S.mode === 'prog' || S.mode === 'list' || S.mode === 'guide' || pip) && !MOB() && S.cur >= 0;
+  const box = S.mode === 'list' ? $('#lsVid') : S.mode === 'guide' ? $('#gVid') : pip ? $('#homeVid') : $('#pgVid');
   if (!NATIVE) {
     if (mini) { const r = layoutRect(box); Object.assign(video.style, { left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', height: r.height + 'px', zIndex: 6, borderRadius: '1rem', objectFit: 'contain', transform: '' }); }
     else {
