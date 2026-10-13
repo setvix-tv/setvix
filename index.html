@@ -280,6 +280,11 @@ body.mob #toast{width:92vw;max-width:none;top:.6rem;font-size:.95rem;padding:.7r
 .m-day{color:var(--muted);font-weight:700;font-size:.85rem;padding:1rem .7rem .3rem}
 #mSheet{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.5);display:flex;align-items:flex-end}
 #mSheet.hidden{display:none}
+#mCast svg{display:block;margin:auto}
+.m-cast p{color:var(--muted);font-size:.95rem;line-height:1.45;margin:.3rem .4rem 1rem}
+.m-cast input{width:100%;font:600 1.4rem var(--sans);letter-spacing:.12em;color:var(--text);background:rgba(237,240,246,.07);border:0;border-radius:.8rem;padding:.9rem 1rem;margin-bottom:.8rem}
+.m-cast button{width:100%;font:700 1.05rem var(--sans);border:0;border-radius:2rem;padding:.9rem;background:#fff;color:var(--night);margin-bottom:.5rem}
+.m-cast button.s{background:rgba(237,240,246,.08);color:var(--text)}
 .m-sheet-in{width:100%;background:var(--deep);border-radius:1.2rem 1.2rem 0 0;padding:1rem .8rem 1.6rem;max-height:75vh;overflow-y:auto}
 .m-sheet-in .opt{margin:.35rem 0}
 body.mob .sheet{width:94vw;padding:1.4rem 1.2rem;max-height:92vh;overflow-y:auto}
@@ -385,7 +390,8 @@ body.native #prog .pg-right,body.native #prog .pg-card{position:relative;z-index
 /* One-tone logos everywhere; full color only on the focused item */
 .card-art img,.llogo img,.osd-logo img,.hero-logo img,#loader .ldlogo img{filter:grayscale(1) brightness(1.25) contrast(1.05);transition:filter .3s}
 .card.focused .card-art img,.li.sel .llogo img,.g-row.sel .llogo img,.hero-logo img{filter:none}
-.card-art img,.llogo img,.osd-logo img{filter:drop-shadow(0 .2rem .6rem rgba(0,0,0,.45))}
+.card-art img,.llogo img,.osd-logo img{filter:grayscale(1) brightness(1.25) contrast(1.05) drop-shadow(0 .2rem .6rem rgba(0,0,0,.45))}
+.card.focused .card-art img,.li.sel .llogo img,.li.playing .llogo img,.g-row.sel .llogo img,#mNowLogo .llogo img,.g-info .llogo img{filter:drop-shadow(0 .2rem .6rem rgba(0,0,0,.45))}
 
 /* The old banner is replaced by the shared panel */
 #osd{display:none!important}
@@ -683,6 +689,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
       <button id="btnView"></button>
       <button id="btnGroups">Channel categories</button>
       <button id="btnAutoQ"></button>
+      <button id="btnCast"></button>
     </div>
     <div class="btns"><button id="btnMore">More settings</button><button id="btnClose">Close</button></div>
     <div id="setMore" class="hidden-more">
@@ -738,6 +745,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
     <div class="m-now">
       <div id="mNowLogo"></div>
       <div class="m-now-t"><b id="mNowName">Setvix</b><span id="mNowProg"></span><div class="bar"><i id="mNowBar"></i></div></div>
+      <button id="mCast" class="m-ic" aria-label="Watch on TV"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></button>
       <button id="mFav" class="m-ic" aria-label="Favorites">&#9734;</button>
       <button id="mOpt" class="m-ic" aria-label="Options">&#8943;</button>
     </div>
@@ -866,7 +874,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.2'; // bumped with every release
+const BUILD = '4.3'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -2701,6 +2709,7 @@ function optItems() {
   if (S.prevCh >= 0 && S.channels[S.prevCh]) it.push({ t: 'Previous channel', v: S.channels[S.prevCh].name, act: () => playAndWatch(S.prevCh) });
   it.push({ t: 'All channels', act: () => openList() });
   it.push({ t: 'Search channels', act: () => openSearch() });
+  if (typeof TOUCH !== 'undefined' && TOUCH) it.push({ t: 'Watch on TV', v: store.get('castLink', '') ? 'linked' : 'not linked', act: () => setTimeout(openCastSheet, 80) });
   it.push({ t: 'Settings', act: () => openSettings() });
   return it;
 }
@@ -2914,6 +2923,39 @@ $('#updYes').onclick = () => {
 };
 $('#updNo').onclick = () => { setMode(S.updPrev && S.updPrev !== 'upd' ? S.updPrev : 'watch'); };
 
+/* ---------- Phone remote (TV side) ---------- */
+function castCode() { let c = store.get('castCode', ''); if (!/^\d{8}$/.test(c)) { c = String(10000000 + Math.floor(Math.random() * 89999999)); store.set('castCode', c); } return c; }
+async function castListen() {
+  if (S.castOn || (typeof TOUCH !== 'undefined' && TOUCH)) return; S.castOn = true;
+  const code = castCode(); let since = Math.floor(Date.now() / 1000);
+  for (;;) {
+    try {
+      const r = await fetch(`${castTopic(code)}/json?since=${since}`, { cache: 'no-store' });
+      if (!r.ok || !r.body) { await sleep(r.status === 429 ? 60000 : 15000); continue; }
+      const rd = r.body.getReader(), dec = new TextDecoder(); let buf = '';
+      for (;;) {
+        const { done, value } = await rd.read(); if (done) break;
+        buf += dec.decode(value, { stream: true }); let i;
+        while ((i = buf.indexOf('\n')) >= 0) {
+          const line = buf.slice(0, i); buf = buf.slice(i + 1);
+          let ev, d; try { ev = JSON.parse(line); } catch (e) { continue; }
+          if (ev.time) since = ev.time + 1;
+          if (ev.event !== 'message' || !ev.message) continue;
+          try { d = pairOpen(JSON.parse(ev.message), 'cast|' + code); } catch (e) { d = null; }
+          if (d && d.a === 'play') castPlay(d);
+        }
+      }
+    } catch (e) { await sleep(15000); }
+  }
+}
+function castPlay(d) {
+  let ci = S.byKey ? S.byKey.get(d.key) : undefined;
+  if (ci == null) ci = S.channels.findIndex(c => c.name === d.name);
+  if (ci == null || ci < 0) { toast(`“${d.name}” isn’t in this TV’s playlist`, 5000); return; }
+  if (d.arch && d.arch.s && archiveUrl(S.channels[ci], d.arch)) playArchive(ci, d.arch); else playAndWatch(ci);
+  toast(`From your phone: ${S.channels[ci].name}`, 3000);
+}
+
 /* ---------- Settings ---------- */
 const fEls = () => [...document.querySelectorAll('#settings .sheet button, #settings .sheet input')].filter(el => el.offsetParent !== null);
 function openSettings(first) {
@@ -2926,6 +2968,7 @@ function openSettings(first) {
   $('#inVp').value = store.get('vportal', '');
   const auto = store.get('epgAuto', '');
   setStatus(auto && !store.get('epg', '') ? 'TV guide was taken from the playlist automatically.' : '');
+  $('#btnCast').textContent = 'Phone remote: ' + castCode().replace(/(\d{4})(\d{4})/, '$1 $2');
   $('#verLabel').textContent = 'Version ' + BUILD + (store.get('logoStat', '') ? ' · ' + store.get('logoStat', '') : '') + '.'; $('#diagOut').textContent = '';
   plsLabels(); setMode('settings'); renderSettings();
 }
@@ -2962,6 +3005,7 @@ function setKey(k) {
   renderSettings();
 }
 document.querySelectorAll('#settings input').forEach(el => el.addEventListener('focus', () => { S.sf = fEls().indexOf(el); renderSettings(); }));
+$('#btnCast').onclick = () => setStatus(`On your phone: open Setvix, tap the TV button and enter ${castCode().replace(/(\d{4})(\d{4})/, '$1 $2')}.`);
 $('#btnMore').onclick = () => { const m = $('#setMore'); m.classList.toggle('open'); $('#btnMore').textContent = m.classList.contains('open') ? 'Fewer settings' : 'More settings'; renderSettings(); };
 $('#btnSave').onclick = async () => {
   const m = $('#inM3u').value.trim(), e = $('#inEpg').value.trim();
@@ -3233,7 +3277,7 @@ async function boot() {
     if (cache && cache.length) { setChannels(cache); toast('The playlist didn’t refresh, showing the saved list.'); }
     else { hideLoader(); openSettings(); setStatus('Could not load the playlist: ' + err.message, true); return; }
   }
-  hintOnce(); startLast(); setTimeout(checkApk, 4000);
+  hintOnce(); startLast(); setTimeout(checkApk, 4000); setTimeout(castListen, 5000);
   if (!S.demo) startEPG(epgUrl());
 }
 
@@ -3493,7 +3537,7 @@ function renderMobProg() {
   if (!a || !a.length) { box.innerHTML = `<p class="tip" style="padding:1rem">${S.epgLoading ? 'TV guide is loading…' : 'No TV guide for this channel.'}</p>`; return; }
   const now = Date.now(); let day = '', html = '';
   a.filter(p => p.e > now - (ch.cu ? (ch.cuDays || 3) * 86400e3 : 3 * 3600e3)).forEach((p, j) => {
-    const d = new Date(p.s).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+    const d = dayName(p.s);
     if (d !== day) { day = d; html += `<div class="m-day">${esc(d)}</div>`; }
     const cls = p.s <= now && now < p.e ? 'now' : p.e <= now ? (archiveUrl(ch, p) ? 'arch' : 'past') : '';
     html += `<div class="m-p ${cls}" data-s="${p.s}"><time>${tm(p.s)}</time><div><b>${esc(p.t)}</b>${p.d && cls === 'now' ? `<small>${esc(p.d)}</small>` : ''}</div></div>`;
@@ -3514,12 +3558,44 @@ function openMobSheet() {
 $('#mSheet').addEventListener('click', e => {
   const vc = e.target.closest('.vc');
   if (vc) { const c = S.mchips[+vc.dataset.c]; if (c) { pickChip(S.cur, c); setTimeout(() => { openMobSheet(); renderMobNow(); }, 60); } return; }
+  if (e.target.closest('.m-cast')) return;
   const it = e.target.closest('.opt');
   if (!it) { $('#mSheet').classList.add('hidden'); return; }
   const o = S.optIt[+it.dataset.i]; if (o) o.act();
   setTimeout(() => { if (S.mode === 'watch' || S.mode === 'opts') { setMode('watch'); openMobSheet(); } renderMobNow(); }, 50);
 });
 $('#mOpt').onclick = () => { if (S.cur >= 0) openMobSheet(); };
+/* ---------- Watch on TV: the phone sends only a command, the TV plays the stream itself ---------- */
+const castTopic = code => PAIR_HUB + hex(sha256(utf8('setvix-cast|' + code))).slice(0, 24);
+async function castSend(ci) {
+  const code = store.get('castLink', ''), ch = S.channels[ci]; if (!code || !ch) return false;
+  const arch = S.archive && S.archive.prog ? { s: S.archive.prog.s, e: S.archive.prog.e, t: S.archive.prog.t } : null;
+  try {
+    const r = await fetch(castTopic(code), { method: 'POST', body: pairSeal({ a: 'play', key: ch.key, name: ch.name, arch }, 'cast|' + code) });
+    if (!r.ok) throw new Error('relay ' + r.status);
+    try { if (NATIVE) SetvixNative.pause(); else video.pause(); } catch (e) {}
+    S.paused = true; $('#mCast').classList.add('on');
+    toast(`“${ch.name}” is playing on your TV`, 3500); return true;
+  } catch (e) { toast('Could not reach the TV: ' + e.message, 4000); return false; }
+}
+function openCastSheet() {
+  const linked = store.get('castLink', '');
+  $('#mSheetIn').innerHTML = `<div class="m-cast">` + (linked
+    ? `<p>Linked to your TV. Pick any channel here and tap the TV button to watch it there.</p><button id="castGo">Play this channel on TV</button><button class="s" id="castUnlink">Unlink TV</button>`
+    : `<p>On your TV open Settings and choose “Phone remote”. Enter the 8-digit code shown there.</p><input id="castIn" inputmode="numeric" maxlength="9" placeholder="1234 5678"><button id="castLinkBtn">Link TV</button>`) + `</div>`;
+  $('#mSheet').classList.remove('hidden');
+  const go = $('#castGo'), un = $('#castUnlink'), lk = $('#castLinkBtn');
+  if (go) go.onclick = e => { e.stopPropagation(); $('#mSheet').classList.add('hidden'); castSend(S.cur); };
+  if (un) un.onclick = e => { e.stopPropagation(); store.set('castLink', ''); $('#mCast').classList.remove('on'); $('#mSheet').classList.add('hidden'); toast('TV unlinked', 2000); };
+  if (lk) lk.onclick = e => {
+    e.stopPropagation(); const c = $('#castIn').value.replace(/\D/g, '');
+    if (c.length !== 8) { toast('The code has 8 digits', 2500); return; }
+    store.set('castLink', c); $('#mSheet').classList.add('hidden'); castSend(S.cur);
+  };
+  const inp = $('#castIn'); if (inp) { inp.onclick = e => e.stopPropagation(); setTimeout(() => inp.focus(), 100); }
+}
+$('#mCast').onclick = () => { if (S.cur < 0) return; if (store.get('castLink', '')) castSend(S.cur); else openCastSheet(); };
+$('#mCast').oncontextmenu = e => { e.preventDefault(); openCastSheet(); };
 $('#mFav').onclick = () => { if (S.cur >= 0) { toggleFav(S.cur); renderMob(true); } };
 document.querySelectorAll('.m-tabs button').forEach(b => b.onclick = () => {
   if (b.dataset.t === 'set') { openSettings(); return; }
