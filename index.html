@@ -388,10 +388,9 @@ body.native #prog .pg-right,body.native #prog .pg-card{position:relative;z-index
 .card-art.nologo,.llogo.nologo,.osd-logo.nologo{background:rgba(237,240,246,.07)}
 .nologo em{color:rgba(237,240,246,.7)!important;font-weight:600!important;letter-spacing:.02em}
 /* One-tone logos everywhere; full color only on the focused item */
-.card-art img,.llogo img,.osd-logo img,.hero-logo img,#loader .ldlogo img{filter:grayscale(1) brightness(1.25) contrast(1.05);transition:filter .3s}
-.card.focused .card-art img,.li.sel .llogo img,.g-row.sel .llogo img,.hero-logo img{filter:none}
-.card-art img,.llogo img,.osd-logo img{filter:grayscale(1) brightness(1.25) contrast(1.05) drop-shadow(0 .2rem .6rem rgba(0,0,0,.45))}
-.card.focused .card-art img,.li.sel .llogo img,.li.playing .llogo img,.g-row.sel .llogo img,#mNowLogo .llogo img,.g-info .llogo img{filter:drop-shadow(0 .2rem .6rem rgba(0,0,0,.45))}
+/* Logos keep their colors, slightly calmed; a thin light outline keeps dark logos (black on transparent) visible */
+.card-art img,.llogo img,.osd-logo img,.hero-logo img,#loader .ldlogo img{filter:saturate(.8) drop-shadow(0 0 .06rem rgba(237,240,246,.85)) drop-shadow(0 0 .3rem rgba(237,240,246,.18));transition:filter .3s}
+.card.focused .card-art img,.li.sel .llogo img,.li.playing .llogo img,.g-row.sel .llogo img,#mNowLogo .llogo img,.g-info .llogo img{filter:drop-shadow(0 0 .06rem rgba(237,240,246,.9)) drop-shadow(0 0 .3rem rgba(237,240,246,.2))}
 
 /* The old banner is replaced by the shared panel */
 #osd{display:none!important}
@@ -878,7 +877,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.4'; // bumped with every release
+const BUILD = '4.5'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -1694,7 +1693,7 @@ function updateOSD() {
   o.querySelector('.osd-name').textContent = ch.name;
   const v = S.vsize && i === S.cur ? S.vsize : null;
   const q = v && v.h ? (v.h >= 2000 ? '4K' : v.h >= 1000 ? 'Full HD' : v.h >= 700 ? 'HD' : 'SD') : (ch.variants && ch.variants.length > 1 ? ch.qlabel : '');
-  o.querySelector('.osd-group').innerHTML = esc(ch.group) + (q ? `<span class="osd-q">${q}</span>` : '') + (isFav(i) ? '<span class="osd-q">\u2605</span>' : '');
+  o.querySelector('.osd-group').innerHTML = esc(gLabel(ch.group)) + (q ? `<span class="osd-q">${q}</span>` : '') + (isFav(i) ? '<span class="osd-q">\u2605</span>' : '');
   const arch = S.archive && i === S.cur ? S.archive.prog : null;
   if (arch) {
     o.querySelector('.osd-now').innerHTML = `<small>${tm(arch.s)}–${tm(arch.e)}</small>${esc(arch.t)}<span class="osd-badge">Catch-up</span>`;
@@ -2859,7 +2858,7 @@ function renderSearch() {
   $('#sIn').parentNode.classList.toggle('focused', S.sf2 === 0);
   $('#sRes').innerHTML = (q || S.sres.length ? '' : '<p class="tip">For example: first, ntv, movie</p>') + S.sres.map((ci, j) => {
     const ch = S.channels[ci], nn = nowNext(ch);
-    return `<div class="li${j + 1 === S.sf2 ? ' sel' : ''}${isFav(ci) ? ' fav' : ''}" data-j="${j}"><span class="lnum">${ch.num}</span>${logoBox(ch, 'llogo')}<div class="ltext"><b>${esc(ch.name)}</b><span class="lnow">${esc(nn.now ? nn.now.t : ch.group)}</span></div></div>`;
+    return `<div class="li${j + 1 === S.sf2 ? ' sel' : ''}${isFav(ci) ? ' fav' : ''}" data-j="${j}"><span class="lnum">${ch.num}</span>${logoBox(ch, 'llogo')}<div class="ltext"><b>${esc(ch.name)}</b><span class="lnow">${esc(nn.now ? nn.now.t : gLabel(ch.group))}</span></div></div>`;
   }).join('');
   $('#sRes').classList.add('lcol', 'on');
 }
@@ -3551,7 +3550,7 @@ function mobItems() {
 function mobRow(ci) {
   const ch = S.channels[ci], nn = nowNext(ch);
   return `<div class="li${ci === S.cur ? ' playing' : ''}${isFav(ci) ? ' fav' : ''}" data-ci="${ci}"><span class="lnum">${ch.num}</span>${logoBox(ch, 'llogo')}` +
-    `<div class="ltext"><b>${esc(ch.name)}</b><span class="lnow">${esc(nn.now ? nn.now.t : ch.group)}</span>${nn.now ? `<div class="bar"><i style="width:${pct(nn.now)}%"></i></div>` : ''}</div></div>`;
+    `<div class="ltext"><b>${esc(ch.name)}</b><span class="lnow">${esc(nn.now ? nn.now.t : gLabel(ch.group))}</span>${nn.now ? `<div class="bar"><i style="width:${pct(nn.now)}%"></i></div>` : ''}</div></div>`;
 }
 function renderMobNow() {
   const ch = S.channels[S.cur];
@@ -3559,7 +3558,7 @@ function renderMobNow() {
   const nn = nowNext(ch), arch = S.archive && S.archive.prog;
   $('#mNowLogo').innerHTML = logoBox(ch, 'llogo');
   $('#mNowName').textContent = `${ch.num}. ${ch.name}`;
-  $('#mNowProg').textContent = arch ? `Catch-up: ${tm(arch.s)} ${arch.t}` : nn.now ? `${tm(nn.now.s)}–${tm(nn.now.e)} ${nn.now.t}` : (ch.qlabel || ch.group);
+  $('#mNowProg').textContent = arch ? `Catch-up: ${tm(arch.s)} ${arch.t}` : nn.now ? `${tm(nn.now.s)}–${tm(nn.now.e)} ${nn.now.t}` : (ch.qlabel || gLabel(ch.group));
   $('#mNowBar').style.width = nn.now && !arch ? pct(nn.now) + '%' : '0';
   $('#mFav').classList.toggle('on', isFav(S.cur)); $('#mFav').innerHTML = isFav(S.cur) ? '&#9733;' : '&#9734;';
 }
