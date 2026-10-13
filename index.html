@@ -450,6 +450,10 @@ body.mob #ctl{display:none!important}
 .hidden-more{display:none}
 .hidden-more.open{display:block;margin-top:1.4rem;padding-top:1.2rem;border-top:1px solid var(--line)}
 #btnClose{margin-left:auto}
+#navBtn{position:fixed;left:1.6rem;top:1.4rem;z-index:30;width:3.4rem;height:3.4rem;border-radius:50%;border:0;background:rgba(8,13,24,.72);color:var(--text);font-size:1.9rem;line-height:1;display:none;box-shadow:0 .4rem 1.2rem rgba(0,0,0,.4);cursor:pointer}
+#navBtn.show{display:grid;place-items:center}
+body.m-home #navBtn{display:none}
+.g-p,.g-ch,.g-chips span,.card,.li{cursor:pointer}
 /* ---------- v4.2: live guide (Google TV style) ---------- */
 #guide{background:var(--deep);padding:2.2rem 3rem 1.6rem}
 .g-top{display:flex;gap:2.4rem;align-items:flex-start;height:15.5rem;flex:none}
@@ -874,7 +878,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.3'; // bumped with every release
+const BUILD = '4.4'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -2765,8 +2769,8 @@ function renderGuide() {
   /* category chips */
   const [ca, cb] = win(S.gcats.length, g.cat, 9);
   $('#gChips').classList.toggle('foc', g.top);
-  $('#gChips').innerHTML = S.gcats.slice(ca, cb).map((c, j) => `<span class="${ca + j === g.cat ? 'on' : ''}">${esc(c.t)}</span>`).join('');
-  let times = ''; for (let t = t0; t < t1; t += 1800000) times += `<b style="left:${((t - t0) * k).toFixed(2)}rem">${tm(t)}</b>`;
+  $('#gChips').innerHTML = S.gcats.slice(ca, cb).map((c, j) => `<span data-c="${ca + j}" class="${ca + j === g.cat ? 'on' : ''}">${esc(c.t)}</span>`).join('');
+  let times = ''; for (let t = t0; t < t1; t += 1800000) { if (Math.abs(t - now) * k < 3.2) continue; times += `<b style="left:${((t - t0) * k).toFixed(2)}rem">${tm(t)}</b>`; }
   $('#gTimes').innerHTML = times;
   const n = list.length, start = Math.max(0, Math.min(g.pos - 2, n - G_ROWS));
   const fp = gFocusProg();
@@ -2774,12 +2778,12 @@ function renderGuide() {
   for (let r = 0; r < G_ROWS && start + r < n; r++) {
     const ci = list[start + r], ch = S.channels[ci], nn = nowNext(ch), selRow = start + r === g.pos;
     const progs = progsAround(ci, t0, t1);
-    html += `<div class="g-row${selRow ? ' sel' : ''}" style="top:${(r * G_ROWH).toFixed(2)}rem"><div class="g-ch${isFav(ci) ? ' fav' : ''}">${logoBox(ch, 'llogo')}` +
+    html += `<div class="g-row${selRow ? ' sel' : ''}" data-p="${start + r}" style="top:${(r * G_ROWH).toFixed(2)}rem"><div class="g-ch${isFav(ci) ? ' fav' : ''}">${logoBox(ch, 'llogo')}` +
       `<div class="gt"><b>${esc(nn.now ? nn.now.t : ch.name)}</b><small>${esc(ch.name)}${nn.now ? ` · ${minsLeft(nn.now)} min left` : ''}</small></div></div><div class="g-progs">` +
       progs.map(p => {
         const l = Math.max(0, (p.s - t0) * k), w = Math.max(1.5, (Math.min(p.e, t1) - Math.max(p.s, t0)) * k - .3);
         const cls = ['g-p', p.s <= now && now < p.e ? 'now' : p.e <= now ? (archiveUrl(ch, p) ? 'arch' : 'past') : 'fut', !g.top && selRow && fp && p.s === fp.s && !p.none === !fp.none ? 'sel' : ''].join(' ');
-        return `<div class="${cls}" style="left:${l.toFixed(2)}rem;width:${w.toFixed(2)}rem"><b>${esc(p.t)}</b><small>${p.none ? '' : tm(p.s) + '–' + tm(p.e)}</small></div>`;
+        return `<div class="${cls}" data-s="${p.none ? '' : p.s}" style="left:${l.toFixed(2)}rem;width:${w.toFixed(2)}rem"><b>${esc(p.t)}</b><small>${p.none ? '' : tm(p.s) + '–' + tm(p.e)}</small></div>`;
       }).join('') + '</div></div>';
   }
   $('#gRows').innerHTML = html;
@@ -2828,6 +2832,18 @@ function guideKey(k) {
   }
   renderGuide();
 }
+
+/* Touch and mouse in the guide: tap a category, tap a show to select it, tap again to watch */
+$('#gChips').addEventListener('click', e => { const c = e.target.closest('[data-c]'); if (!c) return; S.gf.cat = +c.dataset.c; S.gf.pos = 0; S.gf.top = false; renderGuide(); });
+$('#gRows').addEventListener('click', e => {
+  const row = e.target.closest('.g-row'); if (!row) return;
+  const g = S.gf, pos = +row.dataset.p, pe = e.target.closest('.g-p');
+  const wasSel = pos === g.pos && pe && pe.classList.contains('sel');
+  g.top = false; g.pos = pos; g.ci = gList()[pos];
+  if (pe && pe.dataset.s) g.t = +pe.dataset.s + 1000; else if (!pe) g.t = Date.now();
+  if (wasSel || !pe) { renderGuide(); guideKey('ok'); return; }
+  renderGuide();
+});
 
 /* ---------- Search ---------- */
 function openSearch() {
@@ -3399,6 +3415,38 @@ document.addEventListener('click', e => {
 });
 $('#hero').addEventListener('click', () => { if (S.cur >= 0) setMode('watch'); });
 document.querySelectorAll('#topbar .tb').forEach((b, i) => b.addEventListener('click', ev => { ev.stopPropagation(); TB[i].act(); }));
+
+/* ---------- Touch, mouse and Windows ----------
+   Swipes and the mouse wheel act like the remote's arrows on the big-screen layout;
+   a floating button gives touch and mouse users a way back without a remote. */
+const SWIPE_MODES = new Set(['home', 'guide', 'list', 'gsel', 'opts', 'search', 'prog', 'vod']);
+let tsx = 0, tsy = 0, tst = 0;
+document.addEventListener('touchstart', e => { if (MOB() || !e.touches[0]) return; tsx = e.touches[0].clientX; tsy = e.touches[0].clientY; tst = Date.now(); }, { passive: true });
+document.addEventListener('touchend', e => {
+  if (MOB() || !SWIPE_MODES.has(S.mode) || !e.changedTouches[0]) return;
+  const dx = e.changedTouches[0].clientX - tsx, dy = e.changedTouches[0].clientY - tsy, ax = Math.abs(dx), ay = Math.abs(dy);
+  if (Math.max(ax, ay) < 40 || Date.now() - tst > 900) return;
+  const steps = Math.min(5, Math.max(1, Math.round(Math.max(ax, ay) / 140)));
+  const k = ay > ax ? (dy < 0 ? 'down' : 'up') : (dx < 0 ? 'right' : 'left');
+  for (let i = 0; i < steps; i++) handle(k);
+}, { passive: true });
+let wheelT = 0;
+document.addEventListener('wheel', e => {
+  if (MOB() || !SWIPE_MODES.has(S.mode)) return;
+  const now = Date.now(); if (now - wheelT < 90) return; wheelT = now;
+  const horiz = Math.abs(e.deltaX) > Math.abs(e.deltaY) || e.shiftKey, d = horiz ? (e.deltaX || e.deltaY) : e.deltaY;
+  if (Math.abs(d) < 4) return;
+  handle(horiz ? (d > 0 ? 'right' : 'left') : (d > 0 ? 'down' : 'up'));
+}, { passive: true });
+const navBtn = document.createElement('button'); navBtn.id = 'navBtn'; navBtn.setAttribute('aria-label', 'Back'); document.body.appendChild(navBtn);
+function navBtnUpdate() {
+  const show = (TOUCH || S.mouseUsed) && !MOB() && !['link', 'pair'].includes(S.mode) && (S.mode !== 'watch' || S.osdOn);
+  navBtn.classList.toggle('show', !!show);
+  navBtn.innerHTML = S.mode === 'watch' ? '&#8962;' : '&#8249;';
+}
+navBtn.onclick = e => { e.stopPropagation(); if (S.mode === 'watch') openHome(); else handle('back'); setTimeout(navBtnUpdate, 60); };
+document.addEventListener('mousemove', () => { if (!S.mouseUsed) { S.mouseUsed = true; navBtnUpdate(); } }, { once: true });
+setInterval(navBtnUpdate, 700);
 
 /* Clock and guide refresh */
 function tick() { const t = tm(Date.now()); document.querySelectorAll('.clock,.osd-clock').forEach(c => c.textContent = t); }
