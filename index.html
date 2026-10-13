@@ -752,7 +752,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 17.5, STEP = 18.4; // rem, совпадает с CSS
-const BUILD = '3.6'; // меняется с каждой новой версией
+const BUILD = '3.7'; // меняется с каждой новой версией
 const APP = location.hostname === 'setvix.local'; // запущено внутри APK для приставки
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* Нативный движок ExoPlayer есть только в приложении версии 2.0+ */
@@ -908,10 +908,16 @@ function applyView(list) {
 /* Рекомендуемое избранное: самые смотрибельные каналы. Добавляется один раз в каждой подборке;
    если канал убрать из избранного вручную, он не вернётся. */
 const FAV_SEED = new Set(["Первый канал", "Россия 1", "НТВ", "ТНТ", "СТС", "РЕН ТВ", "Пятый канал", "ТВ Центр", "ТВ-3", "Домашний", "Пятница!", "Россия 24", "РБК", "Deutsche Welle Russian", "Настоящее время", "RTVi", "Дом Кино Премиум", "Кинопремьера", "Кинохит", "Viju+ Premiere", "Amedia Premium", "Viju TV1000", "Русский иллюзион", "Матч ТВ", "Матч! Премьер", "Матч! Футбол 1", "Матч! Арена", "Eurosport 1", "Setanta Sports 1", "KHL Prime", "National Geographic", "Discovery Channel", "Viju History", "Моя Планета", "Animal Planet", "Карусель", "Мульт", "Nickelodeon", "МУЗ-ТВ", "Europa Plus TV", "Armenia 1 AM", "Armenia TV AM", "ATV AM", "Kentron AM", "5TV AM", "Imedi GE", "Rustavi 2 GE", "1TV GE", "Formula GE", "TV Pirveli GE", "Silk Sport 1 GE", "1+1 Україна UA", "ICTV UA", "СТБ UA", "Новий Канал UA"]);
+/* Вторая волна: популярные каналы всех стран (США, Канада, Европа, Турция, Израиль, СНГ и т.д.) */
+const FAV_SEED2 = new Set(["ABC US", "CBS New York US", "NBC New York US", "Fox 5 WNYW US", "CNN US", "Fox News US", "ESPN US", "NFL Network US", "TNT US", "AMC US", "HGTV", "Telemundo US", "Univision US", "CBC Toronto CA", "CTV Toronto CA", "Global Toronto CA", "TSN 1 CA", "Sportsnet Ontario CA", "BBC One UK", "BBC Two UK", "ITV1 UK", "Channel 4 UK", "Sky News UK", "Sky Sports Main Event UK", "Sky Sports Premier League UK", "TNT Sports 1 UK", "Das Erste DE", "ZDF DE", "RTL DE", "ProSieben DE", "Sky Sport Bundesliga 1 DE", "TF1 FR", "France 2 FR", "M6 FR", "Canal+ FR", "beIN Sports 1 FR", "La 1 ES", "Antena 3 ES", "Telecinco ES", "M+ LaLiga ES", "Rai 1 IT", "Rai 2 IT", "Sky Sport Calcio IT", "TVP 1 PL", "TVN PL", "Polsat PL", "Pro TV RO", "Antena 1 RO", "TRT 1 TR", "ATV TR", "Show TV TR", "Kanal D TR", "beIN Sports 1 TR", "Channel 9 IL", "Keshet 12 IL", "Reshet 13 IL", "Беларусь 1 BY", "ОНТ BY", "Хабар KZ", "Первый канал Евразия KZ", "КТК KZ", "O'zbekiston 1 UZ", "Zo'r TV UZ", "AzTV AZ", "Ictimai TV AZ", "Xəzər TV AZ", "Moldova 1 MD", "Pro TV Chisinau MD", "Jurnal TV MD", "Первый Канал Европа", "LTV1 LV", "TV3 LV", "LRT TV LT", "LNK LT", "ETV EE", "ETV+ EE", "SVT1 SE", "TV4 SE", "Nova BG", "BTV BG", "Sport TV 1 PT", "DR1 DK", "Arena Sport 1 HR", "ČT sport CZ", "Ziggo Sport NL", "MBC 2 AE", "Al Jazeera QA", "Star Sports 1 IN", "Zee TV IN", "KBS World KR", "Тоҷикистон TJ"]);
 function seedFav() {
-  if (S.demo) return; const k = 'favSeed:' + curView().id; if (store.get(k, false)) return;
-  let n = 0; S.channels.forEach(c => { if (FAV_SEED.has(c.name) && !S.fav.has(c.key)) { S.fav.add(c.key); n++; } });
-  store.set('fav', [...S.fav]); store.set(k, true);
+  if (S.demo) return; let n = 0;
+  [['favSeed:', FAV_SEED], ['favSeed2:', FAV_SEED2]].forEach(([p, set]) => {
+    const k = p + curView().id; if (store.get(k, false)) return;
+    S.channels.forEach(c => { if (set.has(c.name) && !S.fav.has(c.key)) { S.fav.add(c.key); n++; } });
+    store.set(k, true);
+  });
+  store.set('fav', [...S.fav]);
   if (n) setTimeout(() => toast(`В «Избранное» добавлено ${n} популярных каналов`, 5000), 2500);
 }
 const plsList = () => store.get('pls', []);
