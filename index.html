@@ -461,6 +461,37 @@ body.native.m-home.pip #home > :not(#homeVid){z-index:1}
 #adSlot{display:none}
 .lb .bdg{margin:0 0 0 .45rem}
 body.native #list{background:transparent}
+/* ---------- v4.1: loader, catch-up schedule, hint ---------- */
+#loader .ldlogo{width:9.5rem;height:5.4rem;border-radius:.9rem;display:grid;place-items:center;overflow:hidden;background:rgba(237,240,246,.06)}
+#loader .ldlogo img{max-width:72%;max-height:66%;object-fit:contain}
+#loader .ldlogo em{display:none;font-size:2.2rem;font-style:normal;font-weight:700;color:rgba(237,240,246,.92)}
+#loader .ldlogo.nologo em{display:block}
+#loader .ldlogo.brand{background:transparent;font:700 2.4rem var(--sans);letter-spacing:-.02em}
+#loader .lline{width:9.5rem;height:2px;border-radius:2px;background:rgba(237,240,246,.12);overflow:hidden;position:relative}
+#loader .lline i{position:absolute;top:0;left:-40%;width:40%;height:100%;border-radius:2px;background:var(--amber);animation:lsweep 1.3s cubic-bezier(.6,0,.4,1) infinite}
+@keyframes lsweep{to{left:100%}}
+#loaderText{font-size:1rem;font-weight:500;color:var(--muted)}
+#prog{gap:3rem;padding:3.2rem 3.4rem 2.4rem}
+#prog .pg-right{order:1}
+#prog .pg-left{order:2;width:38%}
+.sc-day{font-weight:700;font-size:.95rem;color:var(--muted);padding:1rem 1.2rem .45rem}
+.sc-it{display:flex;align-items:center;gap:1.2rem;padding:.8rem 1.2rem;border-radius:.8rem;transition:background .2s,transform .25s cubic-bezier(.2,.8,.2,1)}
+.sc-it .t{width:3.6rem;flex:none;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums}
+.sc-it b{flex:1;min-width:0;font-size:1.15rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sc-it .ic{flex:none;font-weight:700;font-size:.9rem;color:var(--amber)}
+.sc-it.now{background:rgba(237,240,246,.07)}
+.sc-it.fut,.sc-it.na{opacity:.45}
+.sc-it.sel{background:#fff;color:var(--night);transform:scale(1.015);opacity:1}
+.sc-it.sel .t{color:rgba(12,20,36,.6)}
+.sc-it.sel .ic{color:#9a6b00}
+.sc-hint{color:var(--muted);font-size:.95rem;margin-top:1rem}
+#pgCard .pc-btns{display:flex;gap:.6rem;margin-top:1.1rem}
+#pgCard .pc-btns span{padding:.6rem 1.2rem;border-radius:2rem;font-weight:600;background:rgba(237,240,246,.1)}
+#pgCard .pc-btns span.f{background:#fff;color:var(--night)}
+#cuHint{position:fixed;right:4rem;bottom:4rem;z-index:5;display:flex;align-items:center;gap:.8rem;padding:.8rem 1.3rem;border-radius:2rem;background:rgba(8,13,24,.8);border:1px solid rgba(242,181,68,.45);font-weight:600;font-size:1.1rem;opacity:0;transform:translateY(.6rem);transition:opacity .35s,transform .35s;pointer-events:none}
+#cuHint.show{opacity:1;transform:none}
+#cuHint .k{display:grid;place-items:center;width:1.8rem;height:1.8rem;border-radius:50%;background:var(--amber);color:var(--night);font-size:.8rem}
+body.mob #cuHint{display:none}
 /* Launch splash */
 #splash{position:fixed;inset:0;z-index:20;display:grid;place-items:center;background:radial-gradient(60% 60% at 50% 45%,#16264a 0,var(--night) 70%);transition:opacity .6s,visibility .6s}
 #splash.out{opacity:0;visibility:hidden}
@@ -556,7 +587,8 @@ body.mob #vod,body.mob #vodd{z-index:9}
 <video id="video" playsinline preload="auto"></video>
 <div id="ambient"></div>
 <div id="shade"></div>
-<div id="loader" class="hidden"><div class="ring"></div><p id="loaderText"></p></div>
+<div id="loader" class="hidden"><div id="loaderLogo"></div><div class="lline"><i></i></div><p id="loaderText"></p></div>
+<div id="cuHint"><span class="k">&#9650;</span><span id="cuHintT"></span></div>
 
 <section id="home" class="layer hidden">
   <header id="topbar">
@@ -694,7 +726,6 @@ body.mob #vod,body.mob #vodd{z-index:9}
     <div class="pg-card" id="pgCard"></div>
   </div>
   <div class="pg-right">
-    <div class="pg-tabs"><span data-t="live">Live</span><span data-t="arch">Catch-up</span></div>
     <div class="pg-list" id="pgList"></div>
   </div>
 </section>
@@ -783,7 +814,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.0'; // bumped with every release
+const BUILD = '4.1'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -847,7 +878,12 @@ function logoBox(ch, cls) {
 }
 let toastT;
 function toast(msg, ms = 4000) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), ms); }
-function showLoader(text) { $('#loaderText').textContent = text || ''; $('#loader').classList.remove('hidden'); }
+function showLoader(text) {
+  const ch = S.cur >= 0 ? S.channels[S.cur] : null, mine = ch && text && text.indexOf(ch.name) === 0;
+  $('#loaderLogo').innerHTML = mine ? logoBox(ch, 'ldlogo') : '<div class="ldlogo brand">Setvix</div>';
+  $('#loaderText').textContent = mine ? (text === ch.name ? 'Opening…' : text) : (text || '');
+  $('#loader').classList.remove('hidden');
+}
 function hideLoader() { $('#loader').classList.add('hidden'); }
 function setStatus(msg, err) { const s = $('#setStatus'); s.textContent = msg || ''; s.classList.toggle('err', !!err); }
 
@@ -1039,12 +1075,14 @@ function setChannels(list) {
   });
   S.byKey = new Map(S.channels.map((c, i) => [c.key, i]));
   try { const lg = JSON.parse(localStorage.getItem('setvix:logos') || '{}'); S.channels.forEach(c => { if (!c.logo && lg[c.key]) c.logo = lg[c.key]; }); } catch (e) {}
+  try { const lm = store.get('logoMap', {}); S.channels.forEach(c => { if (!c.logo && lm[c.name]) c.logo = lm[c.name]; }); } catch (e) {}
   S.epg = new Map(); S.cur = -1;
   const g = new Map();
   S.channels.forEach((c, i) => { if (!g.has(c.group)) g.set(c.group, []); g.get(c.group).push(i); });
   S.groups = [...g.entries()].map(([title, items]) => ({ title, items }));
   if (S.groups.length === 1) S.groups[0].title = 'All channels';
   seedFav(); buildRows();
+  if (!S.demo) { clearTimeout(S.logoT); S.logoT = setTimeout(() => fetchLogos(), 12000); }
 }
 function favList() { return S.channels.map((c, i) => i).filter(i => S.fav.has(S.channels[i].key)); }
 function buildRows() {
@@ -1384,6 +1422,7 @@ function play(idx, auto, arch) {
   clearTimeout(S.failT);
   if (!auto) S.failStreak = 0;
   if (S.cur >= 0 && S.cur !== idx) S.prevCh = S.cur;
+  if (!arch && ch.cu && ch.cuDays && S.cur !== idx) { clearTimeout(S.cuT); S.cuT = setTimeout(() => { if (S.cur === idx && S.mode === 'watch' && !S.archive) { $('#cuHintT').textContent = `${ch.cuDays} days of catch-up`; $('#cuHint').classList.add('show'); S.cuT = setTimeout(() => $('#cuHint').classList.remove('show'), 3500); } }, 1800); }
   if (!NATIVE && S.cur >= 0 && S.cur !== idx) { video.classList.add('zap'); clearTimeout(S.zapT); S.zapT = setTimeout(() => video.classList.remove('zap'), 4000); }
   if (S.cur !== idx || !auto) { S.errRetry = 0; S.stalls = []; S.recov = 0; }
   S.cur = idx; S.retried = false; S.archive = arch || null; store.set('last', ch.key); pushRecent(ch.key);
@@ -1585,7 +1624,7 @@ function setMode(m) {
   $('#vodd').classList.toggle('hidden', m !== 'vodd');
   if (typeof updateVideoRect === 'function') { setTimeout(updateVideoRect, 30); if (m === 'prog' || m === 'list') setTimeout(updateVideoRect, 500); }
   if (m !== 'pair' && S.pair) stopPair();
-  if (m !== 'watch') hideOSD();
+  if (m !== 'watch') { hideOSD(); $('#cuHint').classList.remove('show'); }
   if (m !== 'ctl') { clearTimeout(S.ctlT); if (S.pop) { S.pop = null; $('#ctlPop').classList.add('hidden'); } }
 }
 
@@ -2227,43 +2266,113 @@ $('#ctlBtns').addEventListener('click', e => { const it = e.target.closest('.cb'
 /* ---------- Guide next to the video: Live and Catch-up ---------- */
 function openProg() {
   if (S.cur < 0) return;
-  hideOSD(); S.pt = 'live'; S.pi = 0; setMode('prog'); renderProg(true);
+  hideOSD(); setMode('prog'); renderProg(true);
 }
+/* One schedule: recorded shows (catch-up days), now, and the next 24 hours */
 function progItems() {
   const ch = S.channels[S.cur]; const a = ch && ch.epgId ? S.epg.get(ch.epgId) : null; const now = Date.now();
   if (!a) return [];
-  if (S.pt === 'live') return a.filter(p => p.e > now).slice(0, 40);
-  return a.filter(p => p.e <= now).slice(-60).reverse();
+  const back = (ch.cu && ch.cuDays ? ch.cuDays : 1) * 86400e3;
+  return a.filter(p => p.e > now - back && p.s < now + 86400e3);
+}
+const dayKey = t => new Date(t).toDateString();
+function dayName(t) {
+  const d = new Date(t), today = new Date(); const y = new Date(today); y.setDate(today.getDate() - 1); const tm2 = new Date(today); tm2.setDate(today.getDate() + 1);
+  if (d.toDateString() === today.toDateString()) return 'Today';
+  if (d.toDateString() === y.toDateString()) return 'Yesterday';
+  if (d.toDateString() === tm2.toDateString()) return 'Tomorrow';
+  return d.toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short' });
 }
 function renderProg(reset) {
   const ch = S.channels[S.cur]; if (!ch) return;
-  document.querySelectorAll('.pg-tabs span').forEach(t => t.classList.toggle('on', t.dataset.t === S.pt));
-  S.pitems = progItems(); if (reset) S.pi = 0; S.pi = Math.min(S.pi, Math.max(0, S.pitems.length - 1));
-  const now = Date.now(); const [a, b] = win(S.pitems.length, S.pi, 7);
-  $('#pgList').innerHTML = S.pitems.length ? S.pitems.slice(a, b).map((p, j) => {
-    const isNow = p.s <= now && now < p.e, can = p.e <= now ? !!archiveUrl(ch, p) : true;
-    const day = new Date(p.s).toDateString() === new Date().toDateString() ? 'Today' : new Date(p.s).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
-    const tag = isNow ? 'Now' : p.e <= now ? (can ? 'Watch recording' : 'No recording') : day;
-    return `<div class="pg-it${isNow ? ' now' : ''}${!can ? ' na' : ''}${a + j === S.pi ? ' sel' : ''}"><b>${esc(p.t)}</b><small><span><span class="tag">${tag}</span>  ${tm(p.s)}–${tm(p.e)}</span><span>${hm(p.e - p.s)}</span></small></div>`;
-  }).join('') : `<p class="tip" style="padding:1rem">${S.pt === 'arch' && !ch.cu ? 'This channel has no catch-up.' : S.epgLoading ? 'TV guide is loading…' : 'No TV guide for this channel.'}</p>`;
+  const now = Date.now();
+  S.pitems = progItems();
+  if (reset) { const i = S.pitems.findIndex(p => p.s <= now && now < p.e); S.pi = i >= 0 ? i : Math.max(0, S.pitems.findIndex(p => p.s > now)); }
+  S.pi = Math.max(0, Math.min(S.pi, S.pitems.length - 1));
+  const [a, b] = win(S.pitems.length, S.pi, 11);
+  let html = '', lastDay = '';
+  S.pitems.slice(a, b).forEach((p, j) => {
+    const dk = dayKey(p.s); if (dk !== lastDay) { html += `<div class="sc-day">${dayName(p.s)}</div>`; lastDay = dk; }
+    const isNow = p.s <= now && now < p.e, past = p.e <= now, can = past && !!archiveUrl(ch, p);
+    const cls = isNow ? ' now' : past ? (can ? '' : ' na') : ' fut';
+    const ic = isNow ? '<span class="bdg" style="background:var(--live);border-color:var(--live);color:#fff">LIVE</span>' : can ? `<span class="ic">${a + j === S.pi ? '&#9654; Play' : '&#10226; Watch'}</span>` : '';
+    html += `<div class="sc-it${cls}${a + j === S.pi ? ' sel' : ''}" data-i="${a + j}"><span class="t">${tm(p.s)}</span><b>${esc(p.t)}</b>${ic}</div>`;
+  });
+  $('#pgList').innerHTML = S.pitems.length ? html + '<p class="sc-hint">&#9650;&#9660; shows · &#9664;&#9654; day · OK to watch</p>'
+    : `<p class="tip" style="padding:1rem">${S.epgLoading ? 'TV guide is loading…' : 'No TV guide for this channel.'}</p>`;
   const sel = S.pitems[S.pi] || nowNext(ch).now;
-  $('#pgCard').innerHTML = `<div class="pc-ch">${logoBox(ch, 'llogo')}<span>${ch.num}. ${esc(ch.name)}${ch.qlabel ? ', ' + esc(ch.qlabel.split(',')[0]) : ''}</span></div>` +
-    (sel ? `<b>${esc(sel.t)}</b><p>${esc(sel.d || (tm(sel.s) + '–' + tm(sel.e)))}</p>` : '<b>Live</b>');
+  const selPast = sel && sel.e <= now, selNow = sel && sel.s <= now && now < sel.e, selCan = selPast && !!archiveUrl(ch, sel);
+  $('#pgCard').innerHTML = `<div class="pc-ch">${logoBox(ch, 'llogo')}<span>${ch.num}. ${esc(ch.name)}</span>${badges(ch, { full: true })}</div>` +
+    (sel ? `<b>${esc(sel.t)}</b><p>${dayName(sel.s)}, ${tm(sel.s)}–${tm(sel.e)}${sel.d ? '. ' + esc(sel.d) : ''}</p>` +
+      `<div class="pc-btns">${selNow ? '<span class="f">&#9654; Watch live</span>' + (archiveUrl(ch, sel) ? '<span>From start</span>' : '') : selCan ? '<span class="f">&#9654; Watch</span>' : selPast ? '<span>No recording</span>' : `<span>Starts at ${tm(sel.s)}</span>`}</div>`
+      : '<b>Live</b>');
 }
 function progKey(k) {
   if (k === 'back') { setMode('watch'); return; }
+  const it = S.pitems || [];
   if (k === 'up') S.pi = Math.max(0, S.pi - 1);
-  else if (k === 'down') S.pi = Math.min(S.pitems.length - 1, S.pi + 1);
-  else if (k === 'left' || k === 'right') { S.pt = k === 'left' ? 'live' : 'arch'; renderProg(true); return; }
+  else if (k === 'down') S.pi = Math.min(it.length - 1, S.pi + 1);
+  else if (k === 'left' || k === 'right') {
+    /* jump to the first show of the previous / next day */
+    if (!it.length) return;
+    const cur = dayKey(it[S.pi].s);
+    if (k === 'right') { const i = it.findIndex((p, j) => j > S.pi && dayKey(p.s) !== cur); if (i >= 0) S.pi = i; }
+    else { let i = S.pi; while (i > 0 && dayKey(it[i - 1].s) === cur) i--; if (i > 0) { const pd = dayKey(it[i - 1].s); i--; while (i > 0 && dayKey(it[i - 1].s) === pd) i--; S.pi = i; } }
+  }
   else if (k === 'chup' || k === 'chdown') { zap(k === 'chup' ? 1 : -1); setTimeout(() => renderProg(true), 600); return; }
   else if (k === 'ok') {
-    const p = S.pitems[S.pi], now = Date.now(); if (!p) return;
+    const p = it[S.pi], now = Date.now(); if (!p) return;
     if (p.s <= now && now < p.e) { if (S.archive) play(S.cur); setMode('watch'); showOSD(); }
-    else if (p.e <= now) playArchive(S.cur, p);
+    else if (p.e <= now) { if (archiveUrl(S.channels[S.cur], p)) playArchive(S.cur, p); else toast('No recording for this show', 2500); }
     else toast(`The show starts at ${tm(p.s)}`, 2500);
     return;
   }
   renderProg(false);
+}
+
+$('#pgList').addEventListener('click', e => { const it = e.target.closest('.sc-it'); if (!it) return; S.pi = +it.dataset.i; progKey('ok'); });
+
+/* ---------- Channel logos from the open iptv-org database ----------
+   For channels that have no logo in the playlist or TV guide. Matched by name (and country when known),
+   downloaded at most every two weeks; only the matched links are kept on the device. */
+const LOGO_API = 'https://iptv-org.github.io/api/';
+const lnorm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/ё/g, 'е')
+  .replace(/\s+(uhd|4k|fhd|hd|sd|orig|50)\b/g, '').replace(/[^\p{L}\p{N}]+/gu, '');
+const lnorm2 = s => lnorm(String(s || '').replace(/\b(tv|тв|channel|канал)\b/gi, ''));
+function applyLogoMap() {
+  const lg = store.get('logoMap', {}); let n = 0;
+  S.channels.forEach(c => { if (!c.logo && lg[c.name]) { c.logo = lg[c.name]; n++; } });
+  if (n && S.mode === 'home') { $('#rowsTrack').innerHTML = ''; renderHome(); updateHero(true); }
+  return n;
+}
+async function fetchLogos(force) {
+  if (S.demo || S.logoBusy) return; applyLogoMap();
+  const need = S.channels.filter(c => !c.logo); if (!need.length) return;
+  if (!force && Date.now() - store.get('logoTs', 0) < 14 * 86400e3 && need.every(c => store.get('logoMiss', {})[c.name])) return;
+  S.logoBusy = true;
+  try {
+    const [chs, lgs] = await Promise.all([fetch(LOGO_API + 'channels.json').then(r => r.json()), fetch(LOGO_API + 'logos.json').then(r => r.json()).catch(() => [])]);
+    const best = new Map();
+    (Array.isArray(lgs) ? lgs : []).forEach(l => {
+      if (!l || !l.channel || !l.url) return; const o = best.get(l.channel);
+      const sc = (l.feed ? 0 : 2) + (/svg|png/i.test(l.format || l.url) ? 1 : 0) + Math.min(2, (l.width || 0) / 256);
+      if (!o || sc > o.sc) best.set(l.channel, { url: l.url, sc });
+    });
+    const idx = new Map(), add = (k, c) => { if (!k) return; if (!idx.has(k)) idx.set(k, []); idx.get(k).push(c); };
+    chs.forEach(c => { if (c.closed) return; [c.name, ...(c.alt_names || [])].forEach(n => { add(lnorm(n), c); add('~' + lnorm2(n), c); }); });
+    const map = store.get('logoMap', {}), miss = {}; let n = 0;
+    need.forEach(ch => {
+      const cc = ccOf(ch), base = ch.name.replace(/\s[A-Z]{2}$/, '');
+      const cands = idx.get(lnorm(base)) || idx.get('~' + lnorm2(base)) || [];
+      const want = cc === 'UK' ? 'GB' : cc;
+      const pick = cands.find(c => want && c.country === want && (best.get(c.id) || c.logo)) || cands.find(c => best.get(c.id) || c.logo);
+      const url = pick && ((best.get(pick.id) || {}).url || pick.logo);
+      if (url) { map[ch.name] = url; n++; } else miss[ch.name] = 1;
+    });
+    store.set('logoMap', map); store.set('logoMiss', miss); store.set('logoTs', Date.now());
+    applyLogoMap();
+  } catch (e) { /* no logos this time; letters stay */ }
+  S.logoBusy = false;
 }
 
 /* ---------- Show and quality info ---------- */
@@ -3020,6 +3129,12 @@ function watchKey(k) {
   if (S.vod) return vodWatchKey(k);
   if (!S.channels.length) return openSettings(true);
   /* Left/right: channels. Down: control panel. Up: guide and catch-up. OK: channel list. */
+  if (S.archive && (k === 'left' || k === 'right')) {
+    /* In a recording, left/right skip 30 s; channel up/down still change the channel */
+    const d = k === 'left' ? -30000 : 30000;
+    if (NATIVE) { try { SetvixNative.seekBy(d); } catch (e) {} } else { try { video.currentTime = Math.max(0, video.currentTime + d / 1000); } catch (e) {} }
+    toast(k === 'left' ? '−30 s' : '+30 s', 1200); return;
+  }
   if (k === 'right' || k === 'chup') zap(1);
   else if (k === 'left' || k === 'chdown') zap(-1);
   else if (k === 'ok') { if (S.muteHint) { video.muted = false; S.muteHint = false; toast('Sound on', 2000); } else openList(); }
