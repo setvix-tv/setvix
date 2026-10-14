@@ -962,20 +962,27 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.9.3'; // bumped with every release
+const BUILD = '4.9.4'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
 const NATIVE = !!(window.SetvixNative && typeof window.SetvixNative.play === 'function');
-const APK_LATEST = 10;
+const APK_LATEST = 11;
 const APK_REQUIRED = false; // true only if something breaks without the new version
-const APK_NOTES = 'Setvix now stays completely silent in the background and never interrupts YouTube or other apps.'; // latest app version on GitHub
+const APK_NOTES = 'Video comes back after calls and the lock screen, hold Back to leave the app, safer updates.'; // latest app version on GitHub
 const APK_URL = 'https://github.com/setvix-tv/setvix/releases/latest/download/setvix-tv.apk';
 if (NATIVE) { document.documentElement.classList.add('native'); document.body.classList.add('native'); }
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem('setvix:' + k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
-  set(k, v) { try { localStorage.setItem('setvix:' + k, JSON.stringify(v)); } catch (e) {} }
+  set(k, v) {
+    const s = JSON.stringify(v);
+    try { localStorage.setItem('setvix:' + k, s); } catch (e) {
+      /* storage full: free the big caches (they rebuild themselves) and try once more */
+      ['cache', 'tmdb', 'logoMiss'].forEach(x => { if (x !== k) try { localStorage.removeItem('setvix:' + x); } catch (e2) {} });
+      try { localStorage.setItem('setvix:' + k, s); } catch (e3) { console.warn('Setvix: could not save', k); }
+    }
+  }
 };
 
 const S = {
@@ -1619,13 +1626,13 @@ function attach(attempt, gen, onFail) {
 S.bg = !!document.hidden;
 function svBg(bg) {
   if (bg) {
-    if (!S.bg) S.bgCh = S.cur >= 0 && S.mode === 'watch' ? S.cur : -1;
+    if (!S.bg) S.bgCh = S.cur >= 0 && S.mode === 'watch' && (S.playing || !TOUCH) ? S.cur : -1;
     S.bg = true; S.gen++;
     clearTimeout(S.failT); clearTimeout(S.wd); clearTimeout(S.attT); clearTimeout(S.cuT); clearTimeout(S.zapT);
     stopVideo();
   } else if (S.bg) {
     S.bg = false;
-    if (S.bgCh >= 0 && S.channels[S.bgCh] && !TOUCH) play(S.bgCh); // the TV continues where it was; phones wait for a tap
+    if (S.bgCh >= 0 && S.channels[S.bgCh]) play(S.bgCh); // continue the channel that was playing
     S.bgCh = -1;
   }
 }
@@ -1663,11 +1670,16 @@ function fail(idx, gen) {
   S.gen++; clearTimeout(S.wd); stopVideo(); hideLoader();
   const ch = S.channels[idx]; if (!ch) return;
   if (S.archive) { S.archive = null; toast('This show isn’t available in catch-up. Back to live.', 5000); setTimeout(() => { if (S.cur === idx) play(idx); }, 1500); return; }
-  S.failStreak++;
-  if (S.failStreak >= 6) { toast('6 channels in a row failed to open. Check your internet or the playlist link in Settings.', 9000); return; }
+  /* Setvix never switches channels on its own: it retries this channel twice, then tells the viewer */
+  S.chRetry = S.chRetryCi === idx ? (S.chRetry || 0) + 1 : 1; S.chRetryCi = idx;
   const http = !APP && location.protocol === 'https:' && /^http:/i.test(ch.url);
-  toast(`“${ch.name}” isn’t playing right now${http ? ': the channel uses http, and the browser blocks such streams on a secure site' : ''}. Switching to the next one.${S.lastErr ? ' [' + S.lastErr + ']' : ''}`, 6000);
-  S.failT = setTimeout(() => { if (S.cur === idx && !S.bg) { const L = zapList(); play(L[(Math.max(0, L.indexOf(idx)) + 1) % L.length], true); if (S.mode === 'watch') showOSD(); } }, 2500);
+  if (S.chRetry <= 2 && !http) {
+    toast(`“${ch.name}” isn’t responding, trying again…`, 3000);
+    S.failT = setTimeout(() => { if (S.cur === idx && !S.bg) play(idx, true); }, S.chRetry === 1 ? 4000 : 12000);
+    return;
+  }
+  toast(`“${ch.name}” isn’t playing right now${http ? ': the channel uses http, and the browser blocks such streams on a secure site' : ''}. Choose another channel.${S.lastErr ? ' [' + S.lastErr + ']' : ''}`, 8000);
+  if (S.mode === 'watch') showOSD();
 }
 /* Picture size: auto fills the screen for old 4:3 channels; a manual mode is remembered per channel */
 const AR_MODES = [
@@ -1709,7 +1721,7 @@ video.addEventListener('waiting', () => onStall());
 /* Native player events */
 function hideSplash() { const sp = $('#splash'); if (sp && !sp.classList.contains('out')) { sp.classList.add('out'); setTimeout(() => sp.remove(), 800); } }
 setTimeout(hideSplash, 6000);
-function onPlaying() { hideSplash();
+function onPlaying() { hideSplash(); S.chRetry = 0;
   if (S.vod && S.vod.start > 0 && !S.vod.seeked) { S.vod.seeked = true; try { SetvixNative.seekTo(S.vod.start); } catch (e) {} } S.playing = true; S.flowing = true; S.failStreak = 0; clearTimeout(S.wd); clearTimeout(S.stallT); hideLoader(); document.body.classList.remove('idle'); }
 /* Slow internet: if the stream keeps stalling, the player itself
    1) restarts the stream if it hangs for more than 15 seconds,
@@ -1822,6 +1834,7 @@ function hideOSD() { S.osdOn = false; clearTimeout(S.ot); if (S.mode !== 'ctl') 
 
 /* ---------- Modes ---------- */
 function setMode(m) {
+  if (S.updPending && m !== 'watch' && !S.bg) { S.updPending = false; setTimeout(() => window.svCheckUpdate && svCheckUpdate(), 300); }
   S.mode = m; const b = document.body;
   b.className = b.className.replace(/\bm-\w+/g, '').trim(); b.classList.add('m-' + m);
   $('#home').classList.toggle('hidden', m !== 'home');
@@ -3083,7 +3096,7 @@ $('#updNo').onclick = () => { setMode(S.updPrev && S.updPrev !== 'upd' ? S.updPr
 function castCode() { let c = store.get('castCode', ''); if (!/^\d{8}$/.test(c)) { c = String(10000000 + Math.floor(Math.random() * 89999999)); store.set('castCode', c); } return c; }
 async function castListen() {
   if (S.castOn || (typeof TOUCH !== 'undefined' && TOUCH)) return; S.castOn = true;
-  const code = castCode(); let since = Math.floor(Date.now() / 1000);
+  const code = castCode(); let since = String(Math.floor(Date.now() / 1000));
   for (;;) {
     try {
       const r = await fetch(`${castTopic(code)}/json?since=${since}`, { cache: 'no-store' });
@@ -3095,8 +3108,8 @@ async function castListen() {
         while ((i = buf.indexOf('\n')) >= 0) {
           const line = buf.slice(0, i); buf = buf.slice(i + 1);
           let ev, d; try { ev = JSON.parse(line); } catch (e) { continue; }
-          if (ev.time) since = ev.time + 1;
           if (ev.event !== 'message' || !ev.message) continue;
+          if (ev.id) since = ev.id;
           try { d = pairOpen(JSON.parse(ev.message), 'cast|' + code); } catch (e) { d = null; }
           if (d && d.a === 'play') castPlay(d);
         }
@@ -3127,7 +3140,7 @@ function openSettings(first) {
   $('#inTmdb').value = store.get('tmdbKey', '');
   $('#btnAuto').style.display = TOUCH ? '' : 'none'; $('#btnAuto').textContent = 'Play on open: ' + (store.get('touchAutoplay', false) ? 'on' : 'off');
   $('#btnCast').textContent = 'Phone remote: ' + castCode().replace(/(\d{4})(\d{4})/, '$1 $2');
-  $('#verLabel').textContent = 'Version ' + BUILD + (store.get('logoStat', '') ? ' · ' + store.get('logoStat', '') : '') + '.'; $('#diagOut').textContent = '';
+  $('#verLabel').textContent = 'Version ' + BUILD + (NATIVE && typeof SetvixNative.versionCode === 'function' ? ' · app build ' + SetvixNative.versionCode() : '') + (store.get('logoStat', '') ? ' · ' + store.get('logoStat', '') : '') + '.'; $('#diagOut').textContent = '';
   plsLabels(); setMode('settings'); renderSettings();
 }
 function renderSettings() {
@@ -3442,7 +3455,7 @@ setTimeout(() => { if (!S.channels.length && document.getElementById('splash')) 
 async function boot() {
   const p = new URLSearchParams(location.search + '&' + location.hash.slice(1));
   if (p.has('link')) return openLink(p.get('link'));
-  if (p.get('m3u')) { store.set('m3u', p.get('m3u')); store.set('demo', false); }
+  if (p.get('m3u') && p.get('m3u') !== store.get('m3u', '') && confirm('Open this playlist in Setvix?\n' + p.get('m3u').slice(0, 80))) { store.set('m3u', p.get('m3u')); store.set('demo', false); }
   if (p.get('epg')) store.set('epg', p.get('epg'));
   if (store.get('demo', false)) { hintOnce(); return startDemo(); }
   /* No playlist yet: start with the built-in free base so the app works right away */
@@ -3642,6 +3655,7 @@ tick(); setInterval(tick, 10000); setInterval(refreshNow, 30000);
       const m = /const BUILD = '([^']+)'/.exec(await r.text());
       if (m && m[1] !== BUILD) {
         if (S.bg || document.hidden) return; // update when Setvix is back on screen
+        if (S.mode === 'watch' && S.playing) { S.updPending = true; return; } // don't interrupt the show
         const ae = document.activeElement;
         if ((ae && ae.tagName === 'INPUT') || S.mode === 'pair' || S.mode === 'link') return; // don’t interrupt while the user is typing
         toast('A new Setvix version is out. Updating…', 3000);
@@ -3815,8 +3829,8 @@ async function castSend(ci) {
   try {
     const r = await fetch(castTopic(code), { method: 'POST', body: pairSeal({ a: 'play', key: ch.key, name: ch.name, arch }, 'cast|' + code) });
     if (!r.ok) throw new Error('relay ' + r.status);
-    try { if (NATIVE) SetvixNative.pause(); else video.pause(); } catch (e) {}
-    S.paused = true; $('#mCast').classList.add('on');
+    S.gen++; clearTimeout(S.wd); clearTimeout(S.failT); stopVideo(); S.playing = false; hideLoader();
+    $('#mCast').classList.add('on');
     toast(`“${ch.name}” is playing on your TV`, 3500); return true;
   } catch (e) { toast('Could not reach the TV: ' + e.message, 4000); return false; }
 }
