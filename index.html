@@ -962,14 +962,14 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.9.2'; // bumped with every release
+const BUILD = '4.9.3'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
 const NATIVE = !!(window.SetvixNative && typeof window.SetvixNative.play === 'function');
-const APK_LATEST = 8;
+const APK_LATEST = 10;
 const APK_REQUIRED = false; // true only if something breaks without the new version
-const APK_NOTES = 'Movie library with seeking and resume, Dolby audio, stable picture on slow internet.'; // latest app version on GitHub
+const APK_NOTES = 'Setvix now stays completely silent in the background and never interrupts YouTube or other apps.'; // latest app version on GitHub
 const APK_URL = 'https://github.com/setvix-tv/setvix/releases/latest/download/setvix-tv.apk';
 if (NATIVE) { document.documentElement.classList.add('native'); document.body.classList.add('native'); }
 
@@ -1523,7 +1523,7 @@ function tryPlay() {
 }
 function armWatchdog(gen) {
   clearTimeout(S.wd);
-  S.wd = setTimeout(() => { if (gen === S.gen && !S.playing) fail(S.cur, gen); }, 35000);
+  S.wd = setTimeout(() => { if (gen === S.gen && !S.playing && !S.bg) fail(S.cur, gen); }, 35000);
 }
 
 /* In the app, all player requests go through the box’s built-in proxy.
@@ -1613,8 +1613,27 @@ function attach(attempt, gen, onFail) {
   if (/\.(mp4|webm|m4v)(\?|#|$)/i.test(url)) { video.onerror = failOnce; video.src = url; tryPlay(); return; }
   if (engine === 'ts') attachTs(url, gen, failOnce); else attachHls(url, gen, failOnce);
 }
+/* ---------- Background guard ----------
+   When Setvix is not on screen (Home button, another app, screen off) it must not play, switch channels or reload.
+   Otherwise the automatic "next channel" logic could start sound in the background and steal audio from YouTube. */
+S.bg = !!document.hidden;
+function svBg(bg) {
+  if (bg) {
+    if (!S.bg) S.bgCh = S.cur >= 0 && S.mode === 'watch' ? S.cur : -1;
+    S.bg = true; S.gen++;
+    clearTimeout(S.failT); clearTimeout(S.wd); clearTimeout(S.attT); clearTimeout(S.cuT); clearTimeout(S.zapT);
+    stopVideo();
+  } else if (S.bg) {
+    S.bg = false;
+    if (S.bgCh >= 0 && S.channels[S.bgCh] && !TOUCH) play(S.bgCh); // the TV continues where it was; phones wait for a tap
+    S.bgCh = -1;
+  }
+}
+window.svBg = svBg;
+document.addEventListener('visibilitychange', () => svBg(document.hidden));
 function play(idx, auto, arch) {
   const ch = S.channels[idx]; if (!ch) return;
+  if (S.bg || document.hidden) { S.bgCh = idx; return; } // never start a stream in the background
   if (S.vod) { S.vod = null; $('#vbar').classList.add('hidden'); }
   clearTimeout(S.failT);
   if (!auto) S.failStreak = 0;
@@ -1648,7 +1667,7 @@ function fail(idx, gen) {
   if (S.failStreak >= 6) { toast('6 channels in a row failed to open. Check your internet or the playlist link in Settings.', 9000); return; }
   const http = !APP && location.protocol === 'https:' && /^http:/i.test(ch.url);
   toast(`“${ch.name}” isn’t playing right now${http ? ': the channel uses http, and the browser blocks such streams on a secure site' : ''}. Switching to the next one.${S.lastErr ? ' [' + S.lastErr + ']' : ''}`, 6000);
-  S.failT = setTimeout(() => { if (S.cur === idx) { const L = zapList(); play(L[(Math.max(0, L.indexOf(idx)) + 1) % L.length], true); if (S.mode === 'watch') showOSD(); } }, 2500);
+  S.failT = setTimeout(() => { if (S.cur === idx && !S.bg) { const L = zapList(); play(L[(Math.max(0, L.indexOf(idx)) + 1) % L.length], true); if (S.mode === 'watch') showOSD(); } }, 2500);
 }
 /* Picture size: auto fills the screen for old 4:3 channels; a manual mode is remembered per channel */
 const AR_MODES = [
@@ -3622,6 +3641,7 @@ tick(); setInterval(tick, 10000); setInterval(refreshNow, 30000);
       if (!r.ok) return;
       const m = /const BUILD = '([^']+)'/.exec(await r.text());
       if (m && m[1] !== BUILD) {
+        if (S.bg || document.hidden) return; // update when Setvix is back on screen
         const ae = document.activeElement;
         if ((ae && ae.tagName === 'INPUT') || S.mode === 'pair' || S.mode === 'link') return; // don’t interrupt while the user is typing
         toast('A new Setvix version is out. Updating…', 3000);
@@ -3630,7 +3650,7 @@ tick(); setInterval(tick, 10000); setInterval(refreshNow, 30000);
     } catch (e) {}
   }
   window.svCheckUpdate = check;
-  setInterval(check, 2 * 60 * 1000);
+  setInterval(() => { if (!S.bg && !document.hidden) check(); }, 2 * 60 * 1000);
   setTimeout(check, 15 * 1000);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
 })();
