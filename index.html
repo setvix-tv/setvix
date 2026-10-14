@@ -572,6 +572,8 @@ body.mob #gest .gt{height:6.5rem}
 #gest .gt i{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:1rem}
 .m-sbar{position:relative}
 .m-sbar #mSearch{width:100%;padding-right:3.4rem}
+#mMic svg{display:block;margin:auto}
+.mg-retry{display:block;width:calc(100% - 1.6rem);margin:.6rem .8rem 0;padding:.7rem;border:0;border-radius:.8rem;background:rgba(242,181,68,.14);color:var(--amber);font:600 .9rem var(--sans)}
 #mMic{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);width:2.6rem;height:2.6rem;border-radius:50%;border:0;background:rgba(237,240,246,.08);color:var(--text);font-size:1.1rem}
 /* ---------- v4.9: show pictures ---------- */
 .g-th{width:6.2rem;height:3.5rem;border-radius:.55rem;object-fit:cover;flex:none;box-shadow:0 .4rem 1rem rgba(0,0,0,.35)}
@@ -803,6 +805,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
       <button id="btnAutoQ"></button>
       <button id="btnCast"></button>
       <button id="btnRadio"></button>
+      <button id="btnEpg">Check TV guide</button>
     </div>
     <div class="btns"><button id="btnMore">More settings</button><button id="btnClose">Close</button></div>
     <div id="setMore" class="hidden-more">
@@ -867,7 +870,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
       <button data-t="ch" class="on">Channels</button><button data-t="pg">Guide</button><button data-t="fav">Favorites</button><button data-t="vod">Movies</button><button data-t="set">Settings</button>
     </div>
     <div id="mPaneCh" class="m-pane">
-      <div class="m-sbar"><input id="mSearch" type="search" placeholder="Search channels" autocomplete="off" spellcheck="false"><button id="mMic" aria-label="Voice">&#127908;</button></div>
+      <div class="m-sbar"><input id="mSearch" type="search" placeholder="Search channels" autocomplete="off" spellcheck="false"><button id="mMic" aria-label="Voice"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button></div>
       <div id="mGroups" class="m-chips"></div>
       <div id="mList" class="m-list"></div>
     </div>
@@ -992,7 +995,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '5.0.2'; // bumped with every release
+const BUILD = '5.0.3'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -1508,7 +1511,10 @@ async function pakoStream(src) {
 }
 /* Default TV guide when neither Settings nor the playlist has one */
 const DEFAULT_EPG = 'http://epg.one/epg2.xml.gz';
-function epgUrl() { return store.get('epg', '') || store.get('epgAuto', '') || DEFAULT_EPG; }
+function epgUrl() { return store.get('epg', '') || store.get('epgAuto', '') || store.get('epgOk', '') || DEFAULT_EPG; }
+/* Every guide source we know, in order; used when one fails or doesn't match the channels */
+const EPG_ALT = ['https://iptvx.one/EPG_LITE'];
+const epgCandidates = () => [...new Set([store.get('epg', ''), store.get('epgAuto', ''), store.get('epgOk', ''), DEFAULT_EPG, ...EPG_ALT].filter(Boolean))];
 /* TV guide cache in IndexedDB: the box doesn’t download the big file on every start */
 function idb() {
   if (S._idb) return S._idb;
@@ -1533,7 +1539,7 @@ async function saveEpgCache(url) {
 async function loadEpgCache(url) {
   try {
     const c = await idbGet('epgc');
-    if (!c || c.v !== 4 || c.url !== url || c.m3u !== store.get('m3u', '') || Date.now() - c.ts > 6 * 3600e3) return false;
+    if (!c || c.v !== 4 || (c.url !== url && !epgCandidates().includes(c.url)) || c.m3u !== store.get('m3u', '') || Date.now() - c.ts > 6 * 3600e3) return false;
     S.epg = c.epg instanceof Map ? c.epg : new Map();
     S.channels.forEach(ch => { ch.epgId = c.map[ch.name] || null; });
     if (!S.channels.some(ch => ch.epgId)) return false; // cache doesn't fit this channel list: load fresh
@@ -1545,15 +1551,24 @@ async function startEPG(url, force) {
   clearTimeout(S.epgT); S.epgT = setTimeout(() => startEPG(epgUrl(), true), 6 * 3600e3);
   if (!force && await loadEpgCache(url)) { refreshNow(); return; }
   S.epgLoading = true; S.epgStat = 'loading: ' + url; refreshNow();
+  S.epgTried = S.epgTried || new Set(); S.epgTried.add(url); S.epgT0 = Date.now();
+  const nextSource = why => {
+    const nx = epgCandidates().find(u => !S.epgTried.has(u));
+    if (nx) { toast(`TV guide: ${why}. Trying another source…`, 4000); startEPG(nx, true); return true; }
+    return false;
+  };
   loadEPG(url).then(() => {
     S.epgLoading = false;
     const n = S.channels.filter(c => c.epgId).length;
-    S.epgStat = `${n} of ${S.channels.length} channels have a guide (${url})`;
-    toast(n ? `TV guide loaded: ${n} channels` : 'TV guide downloaded, but channel names did not match', 4000);
+    S.epgStat = `${n} of ${S.channels.length} channels have a guide (${url}, ${Math.round((Date.now() - S.epgT0) / 1000)} s, ${(S.epgBytes / 1048576).toFixed(1)} MB)`;
+    S.epgUsed = url;
+    if (!n && nextSource('no channels matched')) return;
+    if (n) { store.set('epgOk', url); toast(`TV guide loaded: ${n} channels`, 3000); } else toast('TV guide downloaded, but channel names did not match', 4000);
     saveEpgCache(url);
     refreshNow();
   }).catch(err => {
     S.epgLoading = false; S.epgStat = 'error: ' + (err && err.message || err) + ' (' + url + ')'; refreshNow();
+    if (nextSource('source unavailable')) return;
     toast('TV guide failed to load: ' + (err && err.message || err), 7000);
   });
 }
@@ -3022,7 +3037,9 @@ function progImg(ch, p) {
 }
 const similar = (a, b) => { const x = tnorm(a), y = tnorm(b); return !!x && !!y && (x === y || (x.length > 3 && y.startsWith(x)) || (y.length > 3 && x.startsWith(y))); };
 async function tmdbFind(t, key) {
-  const j = await (await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${encodeURIComponent(key)}&language=ru-RU&include_adult=false&query=${encodeURIComponent(t)}`)).json();
+  const bearer = key.length > 60, q = `https://api.themoviedb.org/3/search/multi?${bearer ? '' : 'api_key=' + encodeURIComponent(key) + '&'}language=ru-RU&include_adult=false&query=${encodeURIComponent(t)}`;
+  const r = await fetch(q, bearer ? { headers: { Authorization: 'Bearer ' + key } } : undefined); if (!r.ok) { S.tmdbErr = 'TMDB ' + r.status; return ''; } S.tmdbErr = '';
+  const j = await r.json();
   const hit = (j.results || []).find(x => (x.backdrop_path || x.poster_path) && similar(t, x.title || x.name || x.original_title || x.original_name));
   return hit ? 'https://image.tmdb.org/t/p/w300' + (hit.backdrop_path || hit.poster_path) : '';
 }
@@ -3243,7 +3260,25 @@ function setKey(k) {
   renderSettings();
 }
 document.querySelectorAll('#settings input').forEach(el => el.addEventListener('focus', () => { S.sf = fEls().indexOf(el); renderSettings(); }));
+$('#inTmdb').addEventListener('input', () => store.set('tmdbKey', $('#inTmdb').value.trim()));
 $('#inTmdb').addEventListener('change', () => { store.set('tmdbKey', $('#inTmdb').value.trim()); setStatus($('#inTmdb').value.trim() ? 'Posters on: TMDB is added to the free sources (Wikipedia, TVmaze).' : 'Posters off.'); });
+function epgReport() {
+  const m = S.channels.filter(c => c.epgId).length, progs = [...(S.epg || new Map()).values()].reduce((a, b) => a + b.length, 0);
+  const src = store.get('epg', '') ? 'your link' : store.get('epgAuto', '') ? 'from the playlist' : store.get('epgOk', '') ? 'last working source' : 'default';
+  return [`Setvix ${BUILD}${NATIVE ? ' · app' : ' · browser'} · playlist: ${(plsList().find(p => p.url === store.get('m3u', '')) || {}).name || (store.get('m3u', '') === FREE_URL ? FREE_NAME : 'custom')}`,
+    `Channels: ${S.channels.length} (radio ${S.channels.filter(c => c.radio).length})`,
+    `Guide link (${src}): ${epgUrl()}`,
+    `Status: ${S.epgLoading ? 'loading… ' + (S.epgBytes / 1048576).toFixed(1) + ' MB' : S.epgStat || 'not started'}`,
+    `Matched: ${m} channels, ${progs} shows`,
+    `Tried: ${[...(S.epgTried || [])].join(', ') || '—'}`,
+    `Show pictures: ${Object.values(PIMG).filter(Boolean).length} found${store.get('tmdbKey', '') ? ' · TMDB key set' + (S.tmdbErr ? ' (' + S.tmdbErr + ' — check the key)' : '') : ' · no TMDB key'}`].join('\n');
+}
+$('#btnEpg').onclick = () => {
+  S.epgTried = new Set(); startEPG(epgUrl(), true);
+  const out = $('#diagOut'); out.textContent = epgReport();
+  clearInterval(S.epgRepT); S.epgRepT = setInterval(() => { out.textContent = epgReport(); if (!S.epgLoading) clearInterval(S.epgRepT); }, 1000);
+  setStatus('Reloading the TV guide. The report below updates live — send a photo of it if the guide stays empty.');
+};
 $('#btnRadio').onclick = () => { const off = !store.get('radioOff', false); store.set('radioOff', off); plsLabels(); refreshWithRadio(); if (!off) fetchRadio(); setStatus(off ? 'Radio hidden.' : 'Radio on: stations appear in the “Radio” category.'); };
 $('#btnCast').onclick = () => setStatus(`On your phone: open Setvix, tap the TV button and enter ${castCode().replace(/(\d{4})(\d{4})/, '$1 $2')}.`);
 $('#btnMore').onclick = () => { const m = $('#setMore'); m.classList.toggle('open'); $('#btnMore').textContent = m.classList.contains('open') ? 'Fewer settings' : 'More settings'; renderSettings(); };
@@ -3420,7 +3455,7 @@ function plsLabels() {
   $('#plsChips').innerHTML = l.map(p => `<button class="${p.url === m ? 'on' : ''}" data-u="${esc(p.url)}">${esc(p.name)}</button>`).join('');
   $('#plsChips').querySelectorAll('button').forEach(b => b.onclick = () => {
     const p = l.find(x => x.url === b.dataset.u); if (!p || p.url === store.get('m3u', '')) return setStatus('This playlist is already on.');
-    applyPlaylist(p.url, p.url === FREE_URL ? '' : store.get('epg', ''), setStatus, p.name).then(() => { plsLabels(); renderSettings(); });
+    applyPlaylist(p.url, store.get('epg', ''), setStatus, p.name).then(() => { plsLabels(); renderSettings(); });
   });
   $('#btnPlsDel').style.display = m !== FREE_URL && plsList().length ? '' : 'none';
   const cur = l.find(p => p.url === m); $('#srcName').textContent = cur ? cur.name : '';
@@ -3436,7 +3471,7 @@ $('#btnPlsDel').onclick = () => {
   const m = store.get('m3u', ''); if (m === FREE_URL) return;
   const rest = plsList().filter(p => p.url !== m); store.set('pls', rest);
   const nx = rest[0] || { name: FREE_NAME, url: FREE_URL };
-  applyPlaylist(nx.url, nx.url === FREE_URL ? '' : store.get('epg', ''), setStatus, nx.name).then(() => { plsLabels(); renderSettings(); });
+  applyPlaylist(nx.url, store.get('epg', ''), setStatus, nx.name).then(() => { plsLabels(); renderSettings(); });
 };
 async function peek(url) {
   const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 12000);
@@ -3823,7 +3858,8 @@ function renderMobProg() {
         return `<div class="mg-p ${cls}" data-ci="${ci}" data-s="${p.s}" style="left:${l.toFixed(2)}rem;width:${w.toFixed(2)}rem">${cls === 'now' ? imgTag(progImg(ch, p), 'mg-bg') : ''}<b>${esc(p.t)}</b><small>${tm(p.s)}</small></div>`;
       }).join('') : `<div class="mg-p none" data-ci="${ci}" style="left:${(X(now) + .3).toFixed(2)}rem;width:16rem"><b>${S.epgLoading ? 'TV guide is loading…' : 'No TV guide'}</b></div>`) + '</div></div>';
   });
-  box.innerHTML = `<div class="m-chips mg-chips">${chips.map(([v, t]) => `<button data-g="${esc(v)}" class="${v === S.mg ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>` +
+  const noGuide = !S.epgLoading && !S.channels.some(c => c.epgId);
+  box.innerHTML = (noGuide ? `<button class="mg-retry" id="mgRetry">TV guide didn’t load · tap to retry</button>` : '') + `<div class="m-chips mg-chips">${chips.map(([v, t]) => `<button data-g="${esc(v)}" class="${v === S.mg ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>` +
     '<div class="mg-legend"><span><i style="background:var(--live)"></i>Live</span><span><i style="background:var(--amber)"></i>Catch-up · swipe back</span><span><i style="background:rgba(237,240,246,.35)"></i>Upcoming</span></div>' +
     `<div class="mg-scroll"><div class="mg-inner" style="width:calc(10.5rem + ${X(t1).toFixed(2)}rem)"><div class="mg-head"><div class="mg-corner"></div><div class="mg-times">${head}<i class="mg-nowt" style="left:${X(now).toFixed(2)}rem">${tm(now)}</i></div></div>` +
     `<div class="mg-body">${rows}<div class="mg-now" style="left:calc(10.5rem + ${X(now).toFixed(2)}rem)"></div></div></div></div>`;
@@ -3831,6 +3867,7 @@ function renderMobProg() {
   sc.scrollLeft = prevL != null ? prevL : Math.max(0, (X(Math.floor(now / 1800000) * 1800000) - .4) * rem); // start at the current half hour so live shows are fully visible sc.scrollTop = prevT;
 }
 $('#mProg').addEventListener('click', e => {
+  if (e.target.closest('#mgRetry')) { S.epgTried = new Set(); startEPG(epgUrl(), true); toast('Loading the TV guide…', 2500); setTimeout(renderMobProg, 300); return; }
   const chip = e.target.closest('.mg-chips button');
   if (chip) { S.mg = chip.dataset.g; store.set('mg', S.mg); const sc = $('#mProg .mg-scroll'); if (sc) sc.scrollTop = 0; renderMobProg(); return; }
   const c = e.target.closest('.mg-ch'); if (c) { playAndWatch(+c.dataset.ci, S.mgItems); setTimeout(() => { renderMobNow(); renderMobProg(); }, 120); return; }
@@ -3968,12 +4005,12 @@ function voiceStart() {
   const r = new SR(); r.lang = store.get('vlang', 'ru-RU'); r.interimResults = false; r.maxAlternatives = 4;
   r.onresult = e => voiceCmd([...e.results[0]].map(a => a.transcript));
   r.onerror = e => toast('Voice: ' + (e.error === 'not-allowed' ? 'allow the microphone for this site' : e.error), 3000);
-  try { r.start(); toast('🎤 Listening… say a channel or “louder”, “next channel”', 3500); } catch (e) {}
+  try { r.start(); toast('Listening… say a channel or “louder”, “next channel”', 3500); } catch (e) {}
 }
 function volStep(d) { const v = setVol(getVol() + d); showGest('v', v); }
 function voiceCmd(alts) {
   const t = String(alts[0] || '').toLowerCase().trim(); if (!t) return;
-  toast('🎤 ' + alts[0], 2500);
+  toast('“' + alts[0] + '”', 2500);
   if (/громч|louder|volume up|погромче/.test(t)) return volStep(.15);
   if (/тише|quieter|volume down|потише/.test(t)) return volStep(-.15);
   if (/без звука|выключи звук|mute/.test(t)) return volStep(-1);
