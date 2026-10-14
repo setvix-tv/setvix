@@ -774,6 +774,8 @@ body.mob #vod,body.mob #vodd{z-index:9}
       <button id="btnGroups">Channel categories</button>
       <button id="btnAutoQ"></button>
       <button id="btnCast"></button>
+      <button id="btnAuto"></button>
+      <button id="btnEpg">Check TV guide</button>
     </div>
     <div class="btns"><button id="btnMore">More settings</button><button id="btnClose">Close</button></div>
     <div id="setMore" class="hidden-more">
@@ -960,7 +962,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.9.1'; // bumped with every release
+const BUILD = '4.9.2'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -3104,6 +3106,7 @@ function openSettings(first) {
   const auto = store.get('epgAuto', '');
   setStatus(auto && !store.get('epg', '') ? 'TV guide was taken from the playlist automatically.' : '');
   $('#inTmdb').value = store.get('tmdbKey', '');
+  $('#btnAuto').style.display = TOUCH ? '' : 'none'; $('#btnAuto').textContent = 'Play on open: ' + (store.get('touchAutoplay', false) ? 'on' : 'off');
   $('#btnCast').textContent = 'Phone remote: ' + castCode().replace(/(\d{4})(\d{4})/, '$1 $2');
   $('#verLabel').textContent = 'Version ' + BUILD + (store.get('logoStat', '') ? ' · ' + store.get('logoStat', '') : '') + '.'; $('#diagOut').textContent = '';
   plsLabels(); setMode('settings'); renderSettings();
@@ -3142,6 +3145,22 @@ function setKey(k) {
 }
 document.querySelectorAll('#settings input').forEach(el => el.addEventListener('focus', () => { S.sf = fEls().indexOf(el); renderSettings(); }));
 $('#inTmdb').addEventListener('change', () => { store.set('tmdbKey', $('#inTmdb').value.trim()); setStatus($('#inTmdb').value.trim() ? 'Posters on: films, series and cartoons will get pictures.' : 'Posters off.'); });
+function epgReport() {
+  const m = S.channels.filter(c => c.epgId).length, progs = [...(S.epg || new Map()).values()].reduce((a, b) => a + b.length, 0);
+  const src = store.get('epg', '') ? 'your link' : store.get('epgAuto', '') ? 'from the playlist' : 'default';
+  return [`Setvix ${BUILD}${NATIVE ? ' · app ' + (typeof SetvixNative.versionCode === 'function' ? SetvixNative.versionCode() : '') : ' · browser'}${TOUCH ? ' · touch' : ''}`,
+    `Playlist: ${store.get('m3u', '') === FREE_URL ? FREE_NAME : ((plsList().find(p => p.url === store.get('m3u', '')) || {}).name || 'custom')} · ${S.channels.length} channels`,
+    `Guide link (${src}): ${epgUrl()}`,
+    `Status: ${S.epgLoading ? 'loading… ' + (S.epgBytes / 1048576).toFixed(1) + ' MB' : S.epgStat || 'not started'}`,
+    `Matched: ${m} channels, ${progs} shows`].join('\n');
+}
+$('#btnEpg').onclick = () => {
+  startEPG(epgUrl(), true);
+  const out = $('#diagOut'); out.textContent = epgReport();
+  clearInterval(S.epgRepT); S.epgRepT = setInterval(() => { out.textContent = epgReport(); if (!S.epgLoading) clearInterval(S.epgRepT); }, 1000);
+  setStatus('Reloading the TV guide. If it stays empty, send a photo of the report below.');
+};
+$('#btnAuto').onclick = () => { store.set('touchAutoplay', !store.get('touchAutoplay', false)); plsLabels(); setStatus(store.get('touchAutoplay', false) ? 'This phone starts the last channel when opened.' : 'This phone opens the list without playing, so your TV keeps its stream.'); };
 $('#btnCast').onclick = () => setStatus(`On your phone: open Setvix, tap the TV button and enter ${castCode().replace(/(\d{4})(\d{4})/, '$1 $2')}.`);
 $('#btnMore').onclick = () => { const m = $('#setMore'); m.classList.toggle('open'); $('#btnMore').textContent = m.classList.contains('open') ? 'Fewer settings' : 'More settings'; renderSettings(); };
 $('#btnSave').onclick = async () => {
@@ -3385,6 +3404,10 @@ function startLast() {
   if (!S.channels.length) return;
   setTimeout(hideSplash, 1200);
   const last = store.get('last', ''); const i = S.byKey.has(last) ? S.byKey.get(last) : 0;
+  if (TOUCH && !store.get('touchAutoplay', false)) {
+    /* Phone or tablet: open the list without starting a stream, so a TV on the same subscription keeps playing */
+    setTimeout(hideSplash, 300); setMode('watch'); if (MOB()) renderMob(true); return;
+  }
   setMode('watch'); play(i); showOSD();
 }
 function startDemo() {
@@ -3677,7 +3700,7 @@ function mobRow(ci) {
 }
 function renderMobNow() {
   const ch = S.channels[S.cur];
-  if (!ch) { $('#mNowName').textContent = 'Setvix'; $('#mNowProg').textContent = 'Add a playlist in Settings'; return; }
+  if (!ch) { $('#mNowName').textContent = 'Setvix'; $('#mNowProg').textContent = S.channels.length ? 'Tap a channel to watch' : 'Add a playlist in Settings'; return; }
   const nn = nowNext(ch), arch = S.archive && S.archive.prog;
   $('#mNowLogo').innerHTML = logoBox(ch, 'llogo');
   $('#mNowName').textContent = `${ch.num}. ${ch.name}`;
