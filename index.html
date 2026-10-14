@@ -415,7 +415,7 @@ body.native #prog .pg-right,body.native #prog .pg-card{position:relative;z-index
 .nologo em{color:rgba(237,240,246,.7)!important;font-weight:600!important;letter-spacing:.02em}
 /* One-tone logos everywhere; full color only on the focused item */
 /* One-tone logos; the light outline keeps dark logos (black on transparent) visible on the dark background */
-.card-art img,.llogo img,.osd-logo img,.hero-logo img,#loader .ldlogo img{filter:grayscale(1) brightness(1.35) contrast(1.05) drop-shadow(0 0 .07rem rgba(237,240,246,.95)) drop-shadow(0 0 .25rem rgba(237,240,246,.22));transition:filter .3s}
+.card-art img,.llogo img,.osd-logo img,.hero-logo img,#loader .ldlogo img{filter:grayscale(1) brightness(1.12) contrast(1.18) drop-shadow(0 0 .07rem rgba(237,240,246,.95)) drop-shadow(0 0 .25rem rgba(237,240,246,.22));transition:filter .3s}
 /* The channel that is playing or selected shows its real colors */
 .card.focused .card-art img,.li.sel .llogo img,.li.playing .llogo img,.g-row.sel .llogo img,.g-info .llogo img,#mNowLogo .llogo img,.mg-ch.on .llogo img,#loader .ldlogo img,.osd-logo img{filter:drop-shadow(0 0 .2rem rgba(0,0,0,.35))}
 
@@ -545,34 +545,6 @@ body.m-home.pip #hero .hero-title{text-shadow:0 .2rem 1.6rem rgba(0,0,0,.45)}
 #settings .sheet{background:linear-gradient(180deg,rgba(22,32,56,.97),rgba(12,20,36,.97));border:1px solid rgba(237,240,246,.08);box-shadow:0 2.4rem 6rem rgba(0,0,0,.55)}
 #toast{box-shadow:0 1.2rem 3rem rgba(0,0,0,.45)}
 #guide{background:radial-gradient(120% 70% at 85% 0%,rgba(30,48,86,.55) 0%,rgba(8,13,24,0) 60%),var(--deep)}
-/* ---------- v5.0: radio, brightness & volume gestures, voice ---------- */
-#radioArt{position:fixed;inset:0;z-index:1;display:none;flex-direction:column;align-items:center;justify-content:center;gap:1rem;pointer-events:none;
-  background:radial-gradient(60% 60% at 50% 45%,rgba(43,217,137,.18) 0%,rgba(12,20,36,0) 60%),radial-gradient(80% 80% at 30% 80%,rgba(242,181,68,.12) 0%,rgba(12,20,36,0) 60%),var(--night)}
-body.radio #radioArt{display:flex}
-body.mob #radioArt{bottom:auto;height:56.25vw;z-index:4;gap:.5rem}
-#radioArt .ra-logo{width:11rem;height:11rem;border-radius:1.6rem;display:grid;place-items:center;overflow:hidden;background:rgba(237,240,246,.06);box-shadow:0 1.6rem 3rem rgba(0,0,0,.45)}
-body.mob #radioArt .ra-logo{width:5.5rem;height:5.5rem;border-radius:1rem}
-#radioArt .ra-logo img{max-width:80%;max-height:80%;object-fit:contain}
-#radioArt .ra-logo em{font-size:3rem;font-style:normal;font-weight:700}
-#radioArt b{font-size:2.2rem;letter-spacing:-.02em}
-body.mob #radioArt b{font-size:1.2rem}
-#radioArt small{color:var(--muted);font-weight:600}
-.ra-eq{display:flex;gap:.35rem;align-items:flex-end;height:2.4rem}
-.ra-eq i{width:.45rem;border-radius:.3rem;background:var(--live);animation:eq 1s ease-in-out infinite}
-.ra-eq i:nth-child(2){animation-delay:.15s}.ra-eq i:nth-child(3){animation-delay:.3s}.ra-eq i:nth-child(4){animation-delay:.45s}.ra-eq i:nth-child(5){animation-delay:.6s}
-@keyframes eq{0%,100%{height:20%}50%{height:100%}}
-body.radio #ambient{opacity:0!important}
-#dimmer{position:fixed;inset:0;z-index:40;background:#000;opacity:0;pointer-events:none;transition:opacity .15s}
-#gest{position:fixed;top:50%;z-index:41;transform:translateY(-50%);display:none;flex-direction:column;align-items:center;gap:.6rem;padding:.9rem .6rem;border-radius:1.6rem;background:rgba(8,13,24,.62);box-shadow:0 1rem 2.4rem rgba(0,0,0,.4)}
-body.mob #gest{top:28vw}
-#gest.show{display:flex}#gest.left{left:1.2rem}#gest.right{right:1.2rem}
-#gest .gi{font-size:1.3rem;line-height:1}
-#gest .gt{width:.55rem;height:9rem;border-radius:1rem;background:rgba(237,240,246,.2);position:relative;overflow:hidden}
-body.mob #gest .gt{height:6.5rem}
-#gest .gt i{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:1rem}
-.m-sbar{position:relative}
-.m-sbar #mSearch{width:100%;padding-right:3.4rem}
-#mMic{position:absolute;right:.5rem;top:50%;transform:translateY(-50%);width:2.6rem;height:2.6rem;border-radius:50%;border:0;background:rgba(237,240,246,.08);color:var(--text);font-size:1.1rem}
 /* ---------- v4.9: show pictures ---------- */
 .g-th{width:6.2rem;height:3.5rem;border-radius:.55rem;object-fit:cover;flex:none;box-shadow:0 .4rem 1rem rgba(0,0,0,.35)}
 .g-pic{width:17rem;aspect-ratio:16/9;border-radius:.9rem;object-fit:cover;flex:none;box-shadow:0 1rem 2.4rem rgba(0,0,0,.45);animation:picIn .4s ease}
@@ -802,7 +774,6 @@ body.mob #vod,body.mob #vodd{z-index:9}
       <button id="btnGroups">Channel categories</button>
       <button id="btnAutoQ"></button>
       <button id="btnCast"></button>
-      <button id="btnRadio"></button>
     </div>
     <div class="btns"><button id="btnMore">More settings</button><button id="btnClose">Close</button></div>
     <div id="setMore" class="hidden-more">
@@ -867,7 +838,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
       <button data-t="ch" class="on">Channels</button><button data-t="pg">Guide</button><button data-t="fav">Favorites</button><button data-t="vod">Movies</button><button data-t="set">Settings</button>
     </div>
     <div id="mPaneCh" class="m-pane">
-      <div class="m-sbar"><input id="mSearch" type="search" placeholder="Search channels" autocomplete="off" spellcheck="false"><button id="mMic" aria-label="Voice">&#127908;</button></div>
+      <input id="mSearch" type="search" placeholder="Search channels" autocomplete="off" spellcheck="false">
       <div id="mGroups" class="m-chips"></div>
       <div id="mList" class="m-list"></div>
     </div>
@@ -980,9 +951,6 @@ body.mob #vod,body.mob #vodd{z-index:9}
 
 <div id="splash"><b>Setvix<i></i></b><p id="splashMsg">Loading channels</p></div>
 <div id="fx"></div>
-<div id="radioArt"></div>
-<div id="dimmer"></div>
-<div id="gest"><span class="gi"></span><div class="gt"><i></i></div></div>
 <div id="toast"></div>
 <div id="adSlot" aria-hidden="true"></div><!-- reserved for future licensed ad breaks (FAST / SSAI) -->
 <div id="numpad" class="hidden"></div>
@@ -992,14 +960,14 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '5.0'; // bumped with every release
+const BUILD = '4.9.1'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
 const NATIVE = !!(window.SetvixNative && typeof window.SetvixNative.play === 'function');
-const APK_LATEST = 9;
+const APK_LATEST = 8;
 const APK_REQUIRED = false; // true only if something breaks without the new version
-const APK_NOTES = 'Brightness and volume by swiping on the phone, radio stations, smoother playback.'; // latest app version on GitHub
+const APK_NOTES = 'Movie library with seeking and resume, Dolby audio, stable picture on slow internet.'; // latest app version on GitHub
 const APK_URL = 'https://github.com/setvix-tv/setvix/releases/latest/download/setvix-tv.apk';
 if (NATIVE) { document.documentElement.classList.add('native'); document.body.classList.add('native'); }
 
@@ -1266,50 +1234,6 @@ https://ott.tv5monde.com/Content/HLS/Live/channel(europe)/index.m3u8
 https://ott.tv5monde.com/Content/HLS/Live/channel(info)/index.m3u8
 #EXTINF:-1 tvg-country="FR" group-title="France",CGTN Français
 https://news.cgtn.com/resource/live/french/cgtn-f.m3u8`;
-/* ---------- Radio: open stations from the radio-browser.info community database ----------
-   Top stations for the countries in your channel list; refreshed weekly, only names and links are kept. */
-const RADIO_API = ['https://de1.api.radio-browser.info', 'https://nl1.api.radio-browser.info', 'https://at1.api.radio-browser.info'];
-const RADIO_CC = ['RU', 'AM', 'GE', 'UA', 'TR', 'US', 'IL', 'KZ', 'AZ', 'DE', 'BY', 'MD', 'UZ'];
-function radioList() {
-  const r = store.get('radio', null); if (!r || !Array.isArray(r.list) || store.get('radioOff', false)) return [];
-  return r.list.map(x => ({ name: `${x.name} ${x.cc}`, url: x.url, group: 'Radio', logo: x.logo || '', tvgId: '', tvgName: '', radio: true }));
-}
-async function fetchRadio(force) {
-  const r = store.get('radio', null);
-  if (S.radioBusy || (!force && r && Date.now() - r.ts < 7 * 86400e3)) return; S.radioBusy = true;
-  const https = location.protocol === 'https:';
-  const ccs = [...new Set(RADIO_CC.concat(S.channels.filter(c => !c.radio).map(ccOf).filter(Boolean)))].slice(0, 16);
-  const out = [];
-  for (const cc of ccs) {
-    let got = null;
-    for (const h of RADIO_API) {
-      try { const res = await fetch(`${h}/json/stations/search?countrycode=${cc === 'UK' ? 'GB' : cc}&order=votes&reverse=true&limit=30&hidebroken=true`, { cache: 'no-store' }); if (res.ok) { got = await res.json(); break; } } catch (e) {}
-    }
-    if (!Array.isArray(got)) continue;
-    const seen = new Set(); let n = 0;
-    for (const st of got) {
-      const u = st.url_resolved || st.url; if (!u || (https && !/^https:/i.test(u)) || /\.(pls|m3u)(\?|$)/i.test(u)) continue;
-      const nm = String(st.name || '').replace(/\s+/g, ' ').trim().slice(0, 40), k = nm.toLowerCase(); if (!nm || seen.has(k)) continue; seen.add(k);
-      const lg = /^https?:/i.test(st.favicon || '') && (!https || /^https:/i.test(st.favicon)) ? st.favicon : '';
-      out.push({ name: nm, url: u, logo: lg, cc }); if (++n >= 12) break;
-    }
-  }
-  S.radioBusy = false;
-  if (out.length) { store.set('radio', { ts: Date.now(), list: out }); if (!r) refreshWithRadio(true); }
-}
-function refreshWithRadio(added) {
-  if (S.demo || !S.raw) return;
-  const key = S.cur >= 0 && S.channels[S.cur] ? S.channels[S.cur].key : null;
-  setChannels(S.raw); if (key != null && S.byKey.has(key)) S.cur = S.byKey.get(key);
-  startEPG(epgUrl());
-  if (S.mode === 'home') { $('#rowsTrack').innerHTML = ''; renderHome(); }
-  if (MOB()) renderMob(true);
-  if (added) toast(`Radio added: ${radioList().length} stations`, 4000);
-}
-function radioArt(ch) {
-  const on = !!(ch && ch.radio); document.body.classList.toggle('radio', on); if (!on) return;
-  $('#radioArt').innerHTML = `${logoBox(ch, 'ra-logo')}<b>${esc(ch.name.replace(/\s[A-Z]{2}$/, ''))}</b><small>${ccOf(ch) ? (CC_NAMES[ccOf(ch)] || ccOf(ch)) + ' · ' : ''}Radio</small><div class="ra-eq"><i></i><i></i><i></i><i></i><i></i></div>`;
-}
 const plsList = () => store.get('pls', []).filter(p => p.url !== FREE_URL);
 const getPlaylistText = (u, ms, strict) => u === FREE_URL ? Promise.resolve(FREE_M3U) : fetchVia(u, ms, strict);
 function plsName(url) { try { return new URL(url).hostname.replace(/^[^.]+\.(?=[^.]+\.[^.]+$)/, ''); } catch (e) { return 'Playlist'; } }
@@ -1321,7 +1245,7 @@ function plsRemember(url, name) {
 }
 function setChannels(list) {
   S.raw = list;
-  if (!S.demo) list = applyView(list).concat(radioList());
+  if (!S.demo) list = applyView(list);
   const hid = hiddenGroups();
   const byBase = new Map(); const merged = [];
   list.forEach(c => {
@@ -1330,7 +1254,7 @@ function setChannels(list) {
     const vi = variantInfo(c.name);
     const key = group + '|' + vi.base;
     let m = byBase.get(key);
-    if (!m) { m = { name: vi.base, group, srcGroup: c.srcGroup || '', radio: !!c.radio, key, logo: c.logo || '', tvgId: c.tvgId || '', tvgName: c.tvgName || '', variants: [] }; byBase.set(key, m); merged.push(m); }
+    if (!m) { m = { name: vi.base, group, srcGroup: c.srcGroup || '', key, logo: c.logo || '', tvgId: c.tvgId || '', tvgName: c.tvgName || '', variants: [] }; byBase.set(key, m); merged.push(m); }
     if (!m.logo && c.logo) m.logo = c.logo;
     if (!m.tvgId && c.tvgId && !/\s\+\d/.test(c.name)) m.tvgId = c.tvgId;
     m.variants.push({ name: c.name, url: c.url, label: vi.label, score: vi.score, q: vi.q, orig: vi.orig, fps50: vi.fps50, shift: vi.shift, cu: c.cu || '', cuDays: c.cuDays || 0, cuSrc: c.cuSrc || '' });
@@ -1340,8 +1264,8 @@ function setChannels(list) {
     const savedUrl = store.get('var:' + m.key, '');
     let vi = m.variants.findIndex(v => v.url === savedUrl); if (vi < 0) vi = 0;
     const v = m.variants[vi];
-    return { name: m.name, logo: m.logo, tvgId: m.tvgId, tvgName: m.tvgName, group: m.group, srcGroup: m.srcGroup, radio: m.radio, key: m.key, num: i + 1, epgId: null,
-      variants: m.variants, vi, url: v.url, cu: v.cu, cuDays: v.cuDays, cuSrc: v.cuSrc, qlabel: m.radio ? 'Radio' : v.label };
+    return { name: m.name, logo: m.logo, tvgId: m.tvgId, tvgName: m.tvgName, group: m.group, srcGroup: m.srcGroup, key: m.key, num: i + 1, epgId: null,
+      variants: m.variants, vi, url: v.url, cu: v.cu, cuDays: v.cuDays, cuSrc: v.cuSrc, qlabel: v.label };
   });
   S.byKey = new Map(S.channels.map((c, i) => [c.key, i]));
   try { const lg = JSON.parse(localStorage.getItem('setvix:logos') || '{}'); S.channels.forEach(c => { if (!c.logo && lg[c.key]) c.logo = lg[c.key]; }); } catch (e) {}
@@ -1352,7 +1276,7 @@ function setChannels(list) {
   S.groups = [...g.entries()].map(([title, items]) => ({ title, items }));
   if (S.groups.length === 1) S.groups[0].title = 'All channels';
   seedFav(); buildRows();
-  if (!S.demo) { clearTimeout(S.logoT); S.logoT = setTimeout(() => fetchLogos(), 12000); }
+  if (!S.demo) { clearTimeout(S.logoT); S.logoT = setTimeout(() => fetchLogos(), 45000); }
 }
 function favList() { return S.channels.map((c, i) => i).filter(i => S.fav.has(S.channels[i].key)); }
 function buildRows() {
@@ -1523,17 +1447,18 @@ async function idbSet(k, v) { const db = await idb(); return new Promise((res, r
 async function idbGet(k) { const db = await idb(); return new Promise((res, rej) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
 async function saveEpgCache(url) {
   try {
-    const map = {}, logos = {}; S.channels.forEach(c => { if (c.epgId) map[c.key] = c.epgId; if (c.logo) logos[c.key] = c.logo; });
+    const map = {}, logos = {}; S.channels.forEach(c => { if (c.epgId) map[c.name] = c.epgId; if (c.logo) logos[c.key] = c.logo; });
     try { localStorage.setItem('setvix:logos', JSON.stringify(logos)); } catch (e) {}
-    await idbSet('epgc', { v: 3, url, ts: Date.now(), epg: S.epg, map });
+    await idbSet('epgc', { v: 4, url, m3u: store.get('m3u', ''), ts: Date.now(), epg: S.epg, map });
   } catch (e) {}
 }
 async function loadEpgCache(url) {
   try {
     const c = await idbGet('epgc');
-    if (!c || c.v !== 3 || c.url !== url || Date.now() - c.ts > 6 * 3600e3) return false;
+    if (!c || c.v !== 4 || c.url !== url || c.m3u !== store.get('m3u', '') || Date.now() - c.ts > 6 * 3600e3) return false;
     S.epg = c.epg instanceof Map ? c.epg : new Map();
-    S.channels.forEach(ch => { ch.epgId = c.map[ch.key] || null; });
+    S.channels.forEach(ch => { ch.epgId = c.map[ch.name] || null; });
+    if (!S.channels.some(ch => ch.epgId)) return false;
     S.epgStat = `${S.channels.filter(ch => ch.epgId).length} of ${S.channels.length} channels have a guide (cached, ${url})`;
     return true;
   } catch (e) { return false; }
@@ -1684,7 +1609,6 @@ function attach(attempt, gen, onFail) {
   S.attT = setTimeout(() => { if (gen === S.gen && !S.playing) { S.lastErr = (attempt.engine === 'ts' ? 'TS' : 'HLS') + ' no picture in 14 s'; failOnce(); } }, 14000);
   const { url, engine } = attempt;
   if (/\.(mp4|webm|m4v)(\?|#|$)/i.test(url)) { video.onerror = failOnce; video.src = url; tryPlay(); return; }
-  { const rc = S.channels[S.cur]; if (rc && rc.radio && !/m3u8/i.test(url)) { video.onerror = failOnce; video.src = url; tryPlay(); return; } } // radio: plain audio stream
   if (engine === 'ts') attachTs(url, gen, failOnce); else attachHls(url, gen, failOnce);
 }
 function play(idx, auto, arch) {
@@ -1696,7 +1620,7 @@ function play(idx, auto, arch) {
   if (!arch && ch.cu && ch.cuDays && S.cur !== idx) { clearTimeout(S.cuT); S.cuT = setTimeout(() => { if (S.cur === idx && S.mode === 'watch' && !S.archive) { $('#cuHintT').textContent = `${ch.cuDays} days of catch-up`; $('#cuHint').classList.add('show'); S.cuT = setTimeout(() => $('#cuHint').classList.remove('show'), 3500); } }, 1800); }
   if (!NATIVE && S.cur >= 0 && S.cur !== idx) { video.classList.add('zap'); clearTimeout(S.zapT); S.zapT = setTimeout(() => video.classList.remove('zap'), 4000); }
   if (S.cur !== idx || !auto) { S.errRetry = 0; S.stalls = []; S.recov = 0; }
-  S.cur = idx; S.retried = false; S.archive = arch || null; store.set('last', ch.key); pushRecent(ch.key); radioArt(ch);
+  S.cur = idx; S.retried = false; S.archive = arch || null; store.set('last', ch.key); pushRecent(ch.key);
   const src = arch ? arch.url : ch.url;
   const gen = ++S.gen; stopVideo(); showLoader(arch ? ch.name + ': catch-up' : ch.name); armWatchdog(gen);
   if (NATIVE) {
@@ -2622,7 +2546,9 @@ async function fetchLogos(force) {
   if (S.demo || S.logoBusy) return; applyLogoMap();
   if (store.get('logoV', 0) < 2) { force = true; store.set('logoV', 2); }
   const need = S.channels.filter(c => !c.logo); if (!need.length) return;
-  if (!force && Date.now() - store.get('logoTs', 0) < 14 * 86400e3 && need.every(c => store.get('logoMiss', {})[c.name])) return;
+  if (!force && Date.now() - store.get('logoTs', 0) < 14 * 86400e3) return;
+  if (!force && navigator.deviceMemory && navigator.deviceMemory < 2) return;
+  if (!force && S.epgLoading) { clearTimeout(S.logoT); S.logoT = setTimeout(() => fetchLogos(), 30000); return; }
   S.logoBusy = true;
   try {
     const [chs, lgs] = await Promise.all([fetch(LOGO_API + 'channels.json').then(r => r.json()), fetch(LOGO_API + 'logos.json').then(r => r.json()).catch(() => [])]);
@@ -3178,7 +3104,6 @@ function openSettings(first) {
   const auto = store.get('epgAuto', '');
   setStatus(auto && !store.get('epg', '') ? 'TV guide was taken from the playlist automatically.' : '');
   $('#inTmdb').value = store.get('tmdbKey', '');
-  $('#btnRadio').textContent = 'Radio: ' + (store.get('radioOff', false) ? 'off' : 'on');
   $('#btnCast').textContent = 'Phone remote: ' + castCode().replace(/(\d{4})(\d{4})/, '$1 $2');
   $('#verLabel').textContent = 'Version ' + BUILD + (store.get('logoStat', '') ? ' · ' + store.get('logoStat', '') : '') + '.'; $('#diagOut').textContent = '';
   plsLabels(); setMode('settings'); renderSettings();
@@ -3217,7 +3142,6 @@ function setKey(k) {
 }
 document.querySelectorAll('#settings input').forEach(el => el.addEventListener('focus', () => { S.sf = fEls().indexOf(el); renderSettings(); }));
 $('#inTmdb').addEventListener('change', () => { store.set('tmdbKey', $('#inTmdb').value.trim()); setStatus($('#inTmdb').value.trim() ? 'Posters on: films, series and cartoons will get pictures.' : 'Posters off.'); });
-$('#btnRadio').onclick = () => { const off = !store.get('radioOff', false); store.set('radioOff', off); plsLabels(); refreshWithRadio(); if (!off) fetchRadio(); setStatus(off ? 'Radio hidden.' : 'Radio on: stations appear in the “Radio” category.'); };
 $('#btnCast').onclick = () => setStatus(`On your phone: open Setvix, tap the TV button and enter ${castCode().replace(/(\d{4})(\d{4})/, '$1 $2')}.`);
 $('#btnMore').onclick = () => { const m = $('#setMore'); m.classList.toggle('open'); $('#btnMore').textContent = m.classList.contains('open') ? 'Fewer settings' : 'More settings'; renderSettings(); };
 $('#btnSave').onclick = async () => {
@@ -3393,7 +3317,7 @@ function plsLabels() {
   $('#plsChips').innerHTML = l.map(p => `<button class="${p.url === m ? 'on' : ''}" data-u="${esc(p.url)}">${esc(p.name)}</button>`).join('');
   $('#plsChips').querySelectorAll('button').forEach(b => b.onclick = () => {
     const p = l.find(x => x.url === b.dataset.u); if (!p || p.url === store.get('m3u', '')) return setStatus('This playlist is already on.');
-    applyPlaylist(p.url, p.url === FREE_URL ? '' : store.get('epg', ''), setStatus, p.name).then(() => { plsLabels(); renderSettings(); });
+    applyPlaylist(p.url, store.get('epg', ''), setStatus, p.name).then(() => { plsLabels(); renderSettings(); });
   });
   $('#btnPlsDel').style.display = m !== FREE_URL && plsList().length ? '' : 'none';
   const cur = l.find(p => p.url === m); $('#srcName').textContent = cur ? cur.name : '';
@@ -3409,7 +3333,7 @@ $('#btnPlsDel').onclick = () => {
   const m = store.get('m3u', ''); if (m === FREE_URL) return;
   const rest = plsList().filter(p => p.url !== m); store.set('pls', rest);
   const nx = rest[0] || { name: FREE_NAME, url: FREE_URL };
-  applyPlaylist(nx.url, nx.url === FREE_URL ? '' : store.get('epg', ''), setStatus, nx.name).then(() => { plsLabels(); renderSettings(); });
+  applyPlaylist(nx.url, store.get('epg', ''), setStatus, nx.name).then(() => { plsLabels(); renderSettings(); });
 };
 async function peek(url) {
   const ac = new AbortController(); const t = setTimeout(() => ac.abort(), 12000);
@@ -3472,6 +3396,7 @@ function hintOnce() {
   if (store.get('hinted2', false)) return; store.set('hinted2', true);
   setTimeout(() => toast('Left / right: channels. Down: controls. Up: guide and catch-up. OK: channel list.', 9000), 1500);
 }
+setTimeout(() => { if (!S.channels.length && document.getElementById('splash')) { openSettings(true); setStatus('Channels are taking too long to load. Check the internet, then press “Save and load”, or choose Setvix Free.', true); } }, 30000);
 async function boot() {
   const p = new URLSearchParams(location.search + '&' + location.hash.slice(1));
   if (p.has('link')) return openLink(p.get('link'));
@@ -3490,7 +3415,7 @@ async function boot() {
     if (cache && cache.length) { setChannels(cache); toast('The playlist didn’t refresh, showing the saved list.'); }
     else { hideLoader(); openSettings(); setStatus('Could not load the playlist: ' + err.message, true); return; }
   }
-  hintOnce(); startLast(); setTimeout(checkApk, 4000); setTimeout(castListen, 5000); setTimeout(() => { if (!store.get('radioOff', false)) fetchRadio(); }, 15000);
+  hintOnce(); startLast(); setTimeout(hideSplash, 6000); setTimeout(checkApk, 4000); setTimeout(castListen, 8000);
   if (!S.demo) startEPG(epgUrl());
 }
 
@@ -3794,14 +3719,14 @@ function renderMobProg() {
         const l = Math.max(0, X(p.s)), w = Math.max(1.2, X(Math.min(p.e, t1)) - l - .25);
         const cls = p.s <= now && now < p.e ? 'now' : p.e <= now ? (archiveUrl(ch, p) ? 'arch' : 'past') : 'fut';
         return `<div class="mg-p ${cls}" data-ci="${ci}" data-s="${p.s}" style="left:${l.toFixed(2)}rem;width:${w.toFixed(2)}rem">${cls === 'now' ? imgTag(progImg(ch, p), 'mg-bg') : ''}<b>${esc(p.t)}</b><small>${tm(p.s)}</small></div>`;
-      }).join('') : `<div class="mg-p none" data-ci="${ci}" style="left:${X(now - 1800000).toFixed(2)}rem;width:20rem"><b>${S.epgLoading ? 'TV guide is loading…' : 'No TV guide'}</b></div>`) + '</div></div>';
+      }).join('') : `<div class="mg-p none" data-ci="${ci}" style="left:${(X(now) + .3).toFixed(2)}rem;width:16rem"><b>${S.epgLoading ? 'TV guide is loading…' : 'No TV guide'}</b></div>`) + '</div></div>';
   });
   box.innerHTML = `<div class="m-chips mg-chips">${chips.map(([v, t]) => `<button data-g="${esc(v)}" class="${v === S.mg ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>` +
     '<div class="mg-legend"><span><i style="background:var(--live)"></i>Live</span><span><i style="background:var(--amber)"></i>Catch-up · swipe back</span><span><i style="background:rgba(237,240,246,.35)"></i>Upcoming</span></div>' +
     `<div class="mg-scroll"><div class="mg-inner" style="width:calc(10.5rem + ${X(t1).toFixed(2)}rem)"><div class="mg-head"><div class="mg-corner"></div><div class="mg-times">${head}<i class="mg-nowt" style="left:${X(now).toFixed(2)}rem">${tm(now)}</i></div></div>` +
     `<div class="mg-body">${rows}<div class="mg-now" style="left:calc(10.5rem + ${X(now).toFixed(2)}rem)"></div></div></div></div>`;
   const sc = box.querySelector('.mg-scroll'), rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  sc.scrollLeft = prevL != null ? prevL : Math.max(0, (X(now) - 5) * rem); sc.scrollTop = prevT;
+  sc.scrollLeft = prevL != null ? prevL : Math.max(0, (X(Math.floor(now / 1800000) * 1800000) - .4) * rem); sc.scrollTop = prevT;
 }
 $('#mProg').addEventListener('click', e => {
   const chip = e.target.closest('.mg-chips button');
@@ -3818,7 +3743,7 @@ $('#mProg').addEventListener('click', e => {
   setTimeout(() => { renderMobNow(); renderMobProg(); }, 120);
 });
 
-/* Phone controls (restored: options sheet, Watch on TV, favorites, categories, search, list) */
+/* Phone controls: options sheet, Watch on TV, favorites, categories, search, list */
 function openMobSheet() {
   const skip = new Set(['TV Guide', 'All channels', 'Search channels']);
   S.optIt = optItems().filter(o => !skip.has(o.t));
@@ -3868,7 +3793,6 @@ function openCastSheet() {
   };
   const inp = $('#castIn'); if (inp) { inp.onclick = e => e.stopPropagation(); setTimeout(() => inp.focus(), 100); }
 }
-$('#mMic').onclick = e => { e.stopPropagation(); voiceStart(); };
 $('#mCast').onclick = () => { if (S.cur < 0) return; if (store.get('castLink', '')) castSend(S.cur); else openCastSheet(); };
 $('#mCast').oncontextmenu = e => { e.preventDefault(); openCastSheet(); };
 $('#mFav').onclick = () => { if (S.cur >= 0) { toggleFav(S.cur); renderMob(true); } };
@@ -3890,77 +3814,12 @@ $('#mList').addEventListener('scroll', () => {
 /* Landscape phone: full-screen video, swipe up/down to zap */
 document.addEventListener('touchstart', e => { const t = e.touches[0]; S.ts0 = { x: t.clientX, y: t.clientY, at: Date.now() }; }, { passive: true });
 document.addEventListener('touchend', e => {
-  if (!S.ts0 || MOB() || S.mode !== 'watch' || S.gestUsed) return;
+  if (!S.ts0 || MOB() || S.mode !== 'watch') return;
   const t = e.changedTouches[0], dx = t.clientX - S.ts0.x, dy = t.clientY - S.ts0.y;
   if (Date.now() - S.ts0.at > 700) return;
   if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) { zap(dx < 0 ? 1 : -1); e.preventDefault(); }
+  else if (Math.abs(dy) > 70 && Math.abs(dy) > Math.abs(dx) * 1.5) { if (dy < 0) openCtl(); else openProg(); e.preventDefault(); }
 }, { passive: false });
-
-/* Brightness on the left half, volume on the right half: slide a finger up or down over the picture */
-const hasN = f => NATIVE && typeof SetvixNative[f] === 'function';
-function getVol() { try { if (hasN('getVolume')) return SetvixNative.getVolume(); } catch (e) {} return video.muted ? 0 : video.volume; }
-function setVol(v) { v = Math.max(0, Math.min(1, v)); try { if (hasN('setVolume')) { SetvixNative.setVolume(v); return v; } } catch (e) {} video.muted = v === 0; video.volume = v; return v; }
-function getBright() { return store.get('bright', 1); }
-function setBright(v) {
-  v = Math.max(.05, Math.min(1, v)); store.set('bright', v);
-  try { if (hasN('setBrightness')) { SetvixNative.setBrightness(v); $('#dimmer').style.opacity = 0; return v; } } catch (e) {}
-  $('#dimmer').style.opacity = ((1 - v) * .85).toFixed(3); return v; // browsers can't change screen brightness: we dim the picture instead
-}
-function showGest(kind, v) {
-  const g = $('#gest'); g.className = 'show ' + (kind === 'b' ? 'left' : 'right');
-  g.querySelector('.gi').innerHTML = kind === 'b' ? '&#9728;' : v === 0 ? '&#128263;' : '&#128266;';
-  g.querySelector('.gt i').style.height = Math.round(v * 100) + '%';
-  clearTimeout(S.gestT); S.gestT = setTimeout(() => g.className = '', 900);
-}
-function gestZone(x, y) {
-  if (!TOUCH) return null;
-  if (MOB()) { const h = innerWidth * .5625; return y < h ? { h } : null; }
-  return S.mode === 'watch' ? { h: innerHeight } : null;
-}
-document.addEventListener('touchstart', e => {
-  const t = e.touches[0]; S.gest = null; S.gestUsed = false; if (!t || e.touches.length > 1) return;
-  const z = gestZone(t.clientX, t.clientY); if (!z) return;
-  const kind = t.clientX < innerWidth / 2 ? 'b' : 'v';
-  S.gest = { kind, x: t.clientX, y: t.clientY, h: z.h, v0: kind === 'b' ? getBright() : getVol(), live: false };
-}, { passive: true });
-document.addEventListener('touchmove', e => {
-  const g = S.gest, t = e.touches[0]; if (!g || !t) return;
-  const dx = t.clientX - g.x, dy = t.clientY - g.y;
-  if (!g.live) { if (Math.abs(dy) > 14 && Math.abs(dy) > Math.abs(dx) * 1.4) { g.live = true; S.gestUsed = true; } else return; }
-  const v = g.v0 - dy / (g.h * .85);
-  showGest(g.kind, g.kind === 'b' ? setBright(v) : setVol(v));
-}, { passive: true });
-document.addEventListener('touchend', () => { if (S.gest && S.gest.live) S.gestUsed = true; S.gest = null; }, { passive: true });
-setTimeout(() => { if (getBright() < 1) setBright(getBright()); }, 500);
-
-/* ---------- Voice: speak a channel name or a command (Chrome on phone and computer) ---------- */
-const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-const vnorm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/\s[a-z]{2}$/i, '').replace(/[^\p{L}\p{N}]+/gu, '');
-function voiceStart() {
-  if (!SR) { toast('Voice works in Chrome on a phone or computer. On the TV use the Google Assistant button to open Setvix.', 5000); return; }
-  const r = new SR(); r.lang = store.get('vlang', 'ru-RU'); r.interimResults = false; r.maxAlternatives = 4;
-  r.onresult = e => voiceCmd([...e.results[0]].map(a => a.transcript));
-  r.onerror = e => toast('Voice: ' + (e.error === 'not-allowed' ? 'allow the microphone for this site' : e.error), 3000);
-  try { r.start(); toast('🎤 Listening… say a channel or “louder”, “next channel”', 3500); } catch (e) {}
-}
-function volStep(d) { const v = setVol(getVol() + d); showGest('v', v); }
-function voiceCmd(alts) {
-  const t = String(alts[0] || '').toLowerCase().trim(); if (!t) return;
-  toast('🎤 ' + alts[0], 2500);
-  if (/громч|louder|volume up|погромче/.test(t)) return volStep(.15);
-  if (/тише|quieter|volume down|потише/.test(t)) return volStep(-.15);
-  if (/без звука|выключи звук|mute/.test(t)) return volStep(-1);
-  if (/следующ|next/.test(t)) return zap(1);
-  if (/предыдущ|previous|прошл/.test(t)) return zap(-1);
-  if (/пауза|pause|стоп|продолж|resume|play/.test(t)) return watchKey('playpause');
-  if (/^(радио|radio)$/.test(t)) { const i = S.channels.findIndex(c => c.radio); if (i >= 0) return playAndWatch(i); }
-  const num = /(?:канал|channel|номер)\s*(\d{1,4})/.exec(t) || /^(\d{1,4})$/.exec(t);
-  if (num) { const i = S.channels.findIndex(c => c.num === +num[1]); if (i >= 0) return playAndWatch(i); }
-  let best = -1, bl = 0;
-  alts.forEach(a => { const na = vnorm(a); if (!na) return;
-    S.channels.forEach((c, i) => { const nc = vnorm(c.name); if (nc.length > 1 && (na === nc || na.includes(nc) || nc.includes(na)) && nc.length > bl) { bl = nc.length; best = i; } }); });
-  if (best >= 0) playAndWatch(best); else toast(`Didn’t find “${alts[0]}”`, 3000);
-}
 
 /* Refresh the phone screen together with the rest */
 const _origPlay = play;
