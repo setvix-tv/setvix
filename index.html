@@ -415,7 +415,7 @@ body.native #prog .pg-right,body.native #prog .pg-card{position:relative;z-index
 .nologo em{color:rgba(237,240,246,.7)!important;font-weight:600!important;letter-spacing:.02em}
 /* One-tone logos everywhere; full color only on the focused item */
 /* One-tone logos; the light outline keeps dark logos (black on transparent) visible on the dark background */
-.card-art img,.llogo img,.osd-logo img,.hero-logo img,#loader .ldlogo img{filter:grayscale(1) brightness(1.35) contrast(1.05) drop-shadow(0 0 .07rem rgba(237,240,246,.95)) drop-shadow(0 0 .25rem rgba(237,240,246,.22));transition:filter .3s}
+.card-art img,.llogo img,.osd-logo img,.hero-logo img,#loader .ldlogo img{filter:grayscale(1) brightness(1.12) contrast(1.18) drop-shadow(0 0 .07rem rgba(237,240,246,.95)) drop-shadow(0 0 .25rem rgba(237,240,246,.22));transition:filter .3s}
 /* The channel that is playing or selected shows its real colors */
 .card.focused .card-art img,.li.sel .llogo img,.li.playing .llogo img,.g-row.sel .llogo img,.g-info .llogo img,#mNowLogo .llogo img,.mg-ch.on .llogo img,#loader .ldlogo img,.osd-logo img{filter:drop-shadow(0 0 .2rem rgba(0,0,0,.35))}
 
@@ -992,7 +992,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '5.0'; // bumped with every release
+const BUILD = '5.0.2'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -1300,8 +1300,10 @@ async function fetchRadio(force) {
 function refreshWithRadio(added) {
   if (S.demo || !S.raw) return;
   const key = S.cur >= 0 && S.channels[S.cur] ? S.channels[S.cur].key : null;
+  const oldEpg = S.epg, ids = new Map(S.channels.map(c => [c.name, c.epgId])), wasLoading = S.epgLoading;
   setChannels(S.raw); if (key != null && S.byKey.has(key)) S.cur = S.byKey.get(key);
-  startEPG(epgUrl());
+  S.epg = oldEpg; S.channels.forEach(c => { if (ids.get(c.name)) c.epgId = ids.get(c.name); });
+  if (wasLoading || !S.channels.some(c => c.epgId)) startEPG(epgUrl());
   if (S.mode === 'home') { $('#rowsTrack').innerHTML = ''; renderHome(); }
   if (MOB()) renderMob(true);
   if (added) toast(`Radio added: ${radioList().length} stations`, 4000);
@@ -1523,17 +1525,18 @@ async function idbSet(k, v) { const db = await idb(); return new Promise((res, r
 async function idbGet(k) { const db = await idb(); return new Promise((res, rej) => { const q = db.transaction('kv').objectStore('kv').get(k); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); }); }
 async function saveEpgCache(url) {
   try {
-    const map = {}, logos = {}; S.channels.forEach(c => { if (c.epgId) map[c.key] = c.epgId; if (c.logo) logos[c.key] = c.logo; });
+    const map = {}, logos = {}; S.channels.forEach(c => { if (c.epgId) map[c.name] = c.epgId; if (c.logo) logos[c.key] = c.logo; });
     try { localStorage.setItem('setvix:logos', JSON.stringify(logos)); } catch (e) {}
-    await idbSet('epgc', { v: 3, url, ts: Date.now(), epg: S.epg, map });
+    await idbSet('epgc', { v: 4, url, m3u: store.get('m3u', ''), ts: Date.now(), epg: S.epg, map });
   } catch (e) {}
 }
 async function loadEpgCache(url) {
   try {
     const c = await idbGet('epgc');
-    if (!c || c.v !== 3 || c.url !== url || Date.now() - c.ts > 6 * 3600e3) return false;
+    if (!c || c.v !== 4 || c.url !== url || c.m3u !== store.get('m3u', '') || Date.now() - c.ts > 6 * 3600e3) return false;
     S.epg = c.epg instanceof Map ? c.epg : new Map();
-    S.channels.forEach(ch => { ch.epgId = c.map[ch.key] || null; });
+    S.channels.forEach(ch => { ch.epgId = c.map[ch.name] || null; });
+    if (!S.channels.some(ch => ch.epgId)) return false; // cache doesn't fit this channel list: load fresh
     S.epgStat = `${S.channels.filter(ch => ch.epgId).length} of ${S.channels.length} channels have a guide (cached, ${url})`;
     return true;
   } catch (e) { return false; }
@@ -1957,7 +1960,7 @@ function mkCard(ci, i, r) {
 function fillNow(c, ch) {
   const nn = nowNext(ch);
   const art = c.querySelector('.card-art');
-  if (art) { if (nn.now && nn.now.i) { art.style.backgroundImage = `url("${nn.now.i}")`; art.classList.add('has-art'); } else { art.style.backgroundImage = ''; art.classList.remove('has-art'); } }
+  if (art) { const pi = nn.now ? progImg(ch, nn.now) : ''; if (pi) { art.style.backgroundImage = `url("${pi}")`; art.classList.add('has-art'); } else { art.style.backgroundImage = ''; art.classList.remove('has-art'); } }
   c.querySelector('.card-now').textContent = nn.now ? nn.now.t : gLabel(ch.group);
   c.querySelector('.bar').style.visibility = nn.now ? 'visible' : 'hidden';
   c.querySelector('.bar i').style.width = nn.now ? pct(nn.now) + '%' : '0';
@@ -1971,7 +1974,7 @@ function updateHero(force) {
   if (!ch) { body.innerHTML = ''; return; }
   if (force || el.dataset.i !== String(i)) { el.dataset.i = i; el.classList.remove('swap'); void el.offsetWidth; el.classList.add('swap'); }
   const art = $('#heroArt'), nnA = nowNext(ch);
-  if (art) { if (nnA.now && nnA.now.i) { art.style.backgroundImage = `url("${nnA.now.i}")`; art.classList.add('on'); } else art.classList.remove('on'); }
+  if (art) { const pa = nnA.now ? progImg(ch, nnA.now) : ''; if (pa) { art.style.backgroundImage = `url("${pa}")`; art.classList.add('on'); } else art.classList.remove('on'); }
   const nn = nowNext(ch);
   body.innerHTML =
     `<div class="hero-meta"><span class="live">LIVE</span><span>Channel ${ch.num}</span><span>${esc(gLabel(ch.group))}</span>${badges(ch, { full: true })}</div>` +
@@ -2996,33 +2999,57 @@ function guideKey(k) {
 /* ---------- Show pictures ----------
    1) the picture from the TV guide itself; 2) optionally TMDB posters for films, series and kids (needs a free TMDB key);
    only for what is on screen, at most 4 lookups at a time, results remembered on the device. */
-const TMDB = store.get('tmdb', {}), tmdbBusy = new Set();
+const PIMG = store.get('pimg', {}), imgBusy = new Set();
 const IMG_GROUPS = new Set(['Movies', 'Kids', 'Entertainment', 'Documentary', 'Series']);
+const GENERIC_T = /^(новости|news|погода|weather|реклама|телемагазин|магазин на диване|профилактика|перерыв|музыка|клипы|итоги|вести|сегодня|время|утро|день|вечер|ночь|эфир|прямой эфир|live|программа передач|анонс|заставка|прогноз погоды|спорт|sport|кино|фильм|сериал|мультфильмы|мультфильм|документальный фильм|художественный фильм)$/i;
+const WIKI_LANG = { RU: 'ru', BY: 'ru', KZ: 'ru', UZ: 'ru', MD: 'ro', UA: 'uk', AM: 'hy', GE: 'ka', TR: 'tr', DE: 'de', FR: 'fr', ES: 'es', IT: 'it', PL: 'pl', IL: 'he', AZ: 'az', RO: 'ro' };
+const tnorm = s => String(s || '').toLowerCase().replace(/ё/g, 'е').replace(/\s*\(.*?\)\s*/g, '').replace(/[^\p{L}\p{N}]+/gu, '');
 function cleanTitle(t) {
   t = String(t || ''); const q = /[«"„“]([^»"”“]{2,60})[»"”]/.exec(t); if (q) t = q[1];
   return t.replace(/^(х\/ф|т\/с|м\/ф|м\/с|д\/ф|д\/с|фильм|сериал|мультфильм|мультсериал|художественный фильм)\s+/i, '')
     .replace(/\s*\(\d+\+\)|\s*\d+\+$/g, '').replace(/\.\s.*$/, '').replace(/\s+\d+(-я|-й)?\s*(серия|сезон|с\.|эп\.).*$/i, '').trim();
 }
+/* Order: the TV guide's own picture → TMDB poster (if you added a key) → Wikipedia → TVmaze (English titles) */
 function progImg(ch, p) {
   if (!p || p.none) return '';
   if (p.i) return p.i;
-  const key = store.get('tmdbKey', ''); if (!key || !ch) return '';
-  if (!IMG_GROUPS.has(gLabel(ch.srcGroup || ch.group)) && !IMG_GROUPS.has(gLabel(ch.group))) return '';
-  const t = cleanTitle(p.t); if (t.length < 2) return '';
-  if (t in TMDB) return TMDB[t];
-  tmdbFetch(t, key); return '';
+  if (!ch || ch.radio) return '';
+  const t = cleanTitle(p.t); if (t.length < 3 || GENERIC_T.test(t)) return '';
+  const cc = ccOf(ch), lang = /[а-яё]/i.test(t) ? (WIKI_LANG[cc] === 'uk' ? 'uk' : 'ru') : (WIKI_LANG[cc] || 'en');
+  const k = lang + '|' + t;
+  if (k in PIMG) return PIMG[k];
+  imgLookup(k, t, lang, ch); return '';
 }
-async function tmdbFetch(t, key) {
-  if (tmdbBusy.has(t) || tmdbBusy.size >= 4) return; tmdbBusy.add(t);
+const similar = (a, b) => { const x = tnorm(a), y = tnorm(b); return !!x && !!y && (x === y || (x.length > 3 && y.startsWith(x)) || (y.length > 3 && x.startsWith(y))); };
+async function tmdbFind(t, key) {
+  const j = await (await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${encodeURIComponent(key)}&language=ru-RU&include_adult=false&query=${encodeURIComponent(t)}`)).json();
+  const hit = (j.results || []).find(x => (x.backdrop_path || x.poster_path) && similar(t, x.title || x.name || x.original_title || x.original_name));
+  return hit ? 'https://image.tmdb.org/t/p/w300' + (hit.backdrop_path || hit.poster_path) : '';
+}
+async function wikiFind(t, lang) {
+  const u = `https://${lang}.wikipedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch=${encodeURIComponent(t)}&gsrlimit=3&prop=pageimages&piprop=thumbnail&pithumbsize=400`;
+  const j = await (await fetch(u)).json(); const pages = j.query && j.query.pages ? Object.values(j.query.pages).sort((a, b) => a.index - b.index) : [];
+  const hit = pages.find(p => p.thumbnail && similar(t, p.title)); return hit ? hit.thumbnail.source : '';
+}
+async function tvmazeFind(t) {
+  const r = await fetch('https://api.tvmaze.com/singlesearch/shows?q=' + encodeURIComponent(t)); if (!r.ok) return '';
+  const j = await r.json(); return j && j.image && similar(t, j.name) ? String(j.image.medium || '').replace(/^http:/, 'https:') : '';
+}
+async function imgLookup(k, t, lang, ch) {
+  if (imgBusy.has(k) || imgBusy.size >= 4) return; imgBusy.add(k);
+  let url = '';
   try {
-    const r = await fetch(`https://api.themoviedb.org/3/search/multi?api_key=${encodeURIComponent(key)}&language=ru-RU&include_adult=false&query=${encodeURIComponent(t)}`);
-    const j = await r.json(); const hit = (j.results || []).find(x => x.backdrop_path || x.poster_path);
-    TMDB[t] = hit ? 'https://image.tmdb.org/t/p/w300' + (hit.backdrop_path || hit.poster_path) : '';
-    const ks = Object.keys(TMDB); if (ks.length > 600) delete TMDB[ks[0]];
-    store.set('tmdb', TMDB);
-    if (TMDB[t]) { if (S.mode === 'guide') renderGuide(); else if (MOB() && S.mt === 'pg') renderMobProg(); }
-  } catch (e) { TMDB[t] = ''; }
-  tmdbBusy.delete(t);
+    const key = store.get('tmdbKey', '');
+    if (key && (IMG_GROUPS.has(gLabel(ch.srcGroup || ch.group)) || IMG_GROUPS.has(gLabel(ch.group)))) url = await tmdbFind(t, key).catch(() => '');
+    if (!url) url = await wikiFind(t, lang).catch(() => '');
+    if (!url && lang !== 'en' && !/[а-яё]/i.test(t)) url = await wikiFind(t, 'en').catch(() => '');
+    if (!url && /^[\x20-\x7e]+$/.test(t)) url = await tvmazeFind(t).catch(() => '');
+  } catch (e) {}
+  PIMG[k] = url; const ks = Object.keys(PIMG); if (ks.length > 1500) delete PIMG[ks[0]];
+  store.set('pimg', PIMG); imgBusy.delete(k);
+  if (url) { clearTimeout(S.imgRT); S.imgRT = setTimeout(() => {
+    if (S.mode === 'guide') renderGuide(); else if (MOB() && S.mt === 'pg') renderMobProg(); else if (S.mode === 'home') refreshNow();
+  }, 350); }
 }
 const imgTag = (src, cls) => src ? `<img class="${cls}" src="${esc(src)}" loading="lazy" decoding="async" alt="" onerror="this.remove()">` : '';
 
@@ -3216,7 +3243,7 @@ function setKey(k) {
   renderSettings();
 }
 document.querySelectorAll('#settings input').forEach(el => el.addEventListener('focus', () => { S.sf = fEls().indexOf(el); renderSettings(); }));
-$('#inTmdb').addEventListener('change', () => { store.set('tmdbKey', $('#inTmdb').value.trim()); setStatus($('#inTmdb').value.trim() ? 'Posters on: films, series and cartoons will get pictures.' : 'Posters off.'); });
+$('#inTmdb').addEventListener('change', () => { store.set('tmdbKey', $('#inTmdb').value.trim()); setStatus($('#inTmdb').value.trim() ? 'Posters on: TMDB is added to the free sources (Wikipedia, TVmaze).' : 'Posters off.'); });
 $('#btnRadio').onclick = () => { const off = !store.get('radioOff', false); store.set('radioOff', off); plsLabels(); refreshWithRadio(); if (!off) fetchRadio(); setStatus(off ? 'Radio hidden.' : 'Radio on: stations appear in the “Radio” category.'); };
 $('#btnCast').onclick = () => setStatus(`On your phone: open Setvix, tap the TV button and enter ${castCode().replace(/(\d{4})(\d{4})/, '$1 $2')}.`);
 $('#btnMore').onclick = () => { const m = $('#setMore'); m.classList.toggle('open'); $('#btnMore').textContent = m.classList.contains('open') ? 'Fewer settings' : 'More settings'; renderSettings(); };
@@ -3794,14 +3821,14 @@ function renderMobProg() {
         const l = Math.max(0, X(p.s)), w = Math.max(1.2, X(Math.min(p.e, t1)) - l - .25);
         const cls = p.s <= now && now < p.e ? 'now' : p.e <= now ? (archiveUrl(ch, p) ? 'arch' : 'past') : 'fut';
         return `<div class="mg-p ${cls}" data-ci="${ci}" data-s="${p.s}" style="left:${l.toFixed(2)}rem;width:${w.toFixed(2)}rem">${cls === 'now' ? imgTag(progImg(ch, p), 'mg-bg') : ''}<b>${esc(p.t)}</b><small>${tm(p.s)}</small></div>`;
-      }).join('') : `<div class="mg-p none" data-ci="${ci}" style="left:${X(now - 1800000).toFixed(2)}rem;width:20rem"><b>${S.epgLoading ? 'TV guide is loading…' : 'No TV guide'}</b></div>`) + '</div></div>';
+      }).join('') : `<div class="mg-p none" data-ci="${ci}" style="left:${(X(now) + .3).toFixed(2)}rem;width:16rem"><b>${S.epgLoading ? 'TV guide is loading…' : 'No TV guide'}</b></div>`) + '</div></div>';
   });
   box.innerHTML = `<div class="m-chips mg-chips">${chips.map(([v, t]) => `<button data-g="${esc(v)}" class="${v === S.mg ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>` +
     '<div class="mg-legend"><span><i style="background:var(--live)"></i>Live</span><span><i style="background:var(--amber)"></i>Catch-up · swipe back</span><span><i style="background:rgba(237,240,246,.35)"></i>Upcoming</span></div>' +
     `<div class="mg-scroll"><div class="mg-inner" style="width:calc(10.5rem + ${X(t1).toFixed(2)}rem)"><div class="mg-head"><div class="mg-corner"></div><div class="mg-times">${head}<i class="mg-nowt" style="left:${X(now).toFixed(2)}rem">${tm(now)}</i></div></div>` +
     `<div class="mg-body">${rows}<div class="mg-now" style="left:calc(10.5rem + ${X(now).toFixed(2)}rem)"></div></div></div></div>`;
   const sc = box.querySelector('.mg-scroll'), rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-  sc.scrollLeft = prevL != null ? prevL : Math.max(0, (X(now) - 5) * rem); sc.scrollTop = prevT;
+  sc.scrollLeft = prevL != null ? prevL : Math.max(0, (X(Math.floor(now / 1800000) * 1800000) - .4) * rem); // start at the current half hour so live shows are fully visible sc.scrollTop = prevT;
 }
 $('#mProg').addEventListener('click', e => {
   const chip = e.target.closest('.mg-chips button');
