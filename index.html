@@ -280,6 +280,32 @@ body.mob #toast{width:92vw;max-width:none;top:.6rem;font-size:.95rem;padding:.7r
 .m-day{color:var(--muted);font-weight:700;font-size:.85rem;padding:1rem .7rem .3rem}
 #mSheet{position:fixed;inset:0;z-index:9;background:rgba(0,0,0,.5);display:flex;align-items:flex-end}
 #mSheet.hidden{display:none}
+#mProg{padding:0!important;overflow:hidden!important;display:flex;flex-direction:column;height:100%}
+.mg-chips{flex:none;padding:.7rem .8rem .5rem}
+.mg-scroll{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;position:relative}
+.mg-inner{position:relative}
+.mg-head{position:sticky;top:0;z-index:3;display:flex;height:2.2rem;background:var(--deep)}
+.mg-corner{position:sticky;left:0;z-index:4;width:10.5rem;flex:none;background:var(--deep)}
+.mg-times{position:relative;flex:1}
+.mg-times b{position:absolute;top:.5rem;font-size:.8rem;color:var(--muted);font-weight:600}
+.mg-nowt{position:absolute;top:.35rem;transform:translateX(-50%);font-style:normal;font-weight:700;font-size:.8rem;background:#fff;color:var(--night);border-radius:.4rem;padding:.08rem .35rem}
+.mg-body{position:relative}
+.mg-row{display:flex;height:4.6rem;border-bottom:1px solid rgba(237,240,246,.05)}
+.mg-ch{position:sticky;left:0;z-index:2;width:10.5rem;flex:none;display:flex;align-items:center;gap:.5rem;padding:0 .5rem;background:var(--deep)}
+.mg-ch .llogo{width:3.2rem;height:2.2rem}
+.mg-ch div{min-width:0}
+.mg-ch b{display:block;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mg-ch small{display:block;font-size:.7rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mg-ch.on b{color:var(--amber)}
+.mg-tl{position:relative;flex:1}
+.mg-p{position:absolute;top:.35rem;bottom:.35rem;border-radius:.5rem;background:rgba(237,240,246,.06);padding:.35rem .5rem;overflow:hidden}
+.mg-p b{display:block;font-size:.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mg-p small{font-size:.68rem;color:var(--muted)}
+.mg-p.now{background:rgba(237,240,246,.14)}
+.mg-p.arch b:before{content:"\27F2 ";color:var(--amber)}
+.mg-p.past,.mg-p.none{opacity:.45}
+.mg-p.fut{opacity:.8}
+.mg-now{position:absolute;top:0;bottom:0;width:2px;background:#fff;z-index:1;pointer-events:none}
 #mCast svg{display:block;margin:auto}
 .m-cast p{color:var(--muted);font-size:.95rem;line-height:1.45;margin:.3rem .4rem 1rem}
 .m-cast input{width:100%;font:600 1.4rem var(--sans);letter-spacing:.12em;color:var(--text);background:rgba(237,240,246,.07);border:0;border-radius:.8rem;padding:.9rem 1rem;margin-bottom:.8rem}
@@ -388,9 +414,11 @@ body.native #prog .pg-right,body.native #prog .pg-card{position:relative;z-index
 .card-art.nologo,.llogo.nologo,.osd-logo.nologo{background:rgba(237,240,246,.07)}
 .nologo em{color:rgba(237,240,246,.7)!important;font-weight:600!important;letter-spacing:.02em}
 /* One-tone logos everywhere; full color only on the focused item */
-/* Logos keep their colors, slightly calmed; a thin light outline keeps dark logos (black on transparent) visible */
-.card-art img,.llogo img,.osd-logo img,.hero-logo img,#loader .ldlogo img{filter:saturate(.8) drop-shadow(0 0 .06rem rgba(237,240,246,.85)) drop-shadow(0 0 .3rem rgba(237,240,246,.18));transition:filter .3s}
-.card.focused .card-art img,.li.sel .llogo img,.li.playing .llogo img,.g-row.sel .llogo img,#mNowLogo .llogo img,.g-info .llogo img{filter:drop-shadow(0 0 .06rem rgba(237,240,246,.9)) drop-shadow(0 0 .3rem rgba(237,240,246,.2))}
+/* One-tone logos; the light outline keeps dark logos (black on transparent) visible on the dark background */
+.card-art img,.llogo img,.osd-logo img,.hero-logo img,#loader .ldlogo img{filter:grayscale(1) brightness(1.35) contrast(1.05) drop-shadow(0 0 .07rem rgba(237,240,246,.95)) drop-shadow(0 0 .25rem rgba(237,240,246,.22));transition:filter .3s}
+/* The channel that is playing or selected shows its real colors */
+.card.focused .card-art img,.li.sel .llogo img,.li.playing .llogo img,.g-row.sel .llogo img,.g-info .llogo img,#mNowLogo .llogo img,.mg-ch.on .llogo img,#loader .ldlogo img,.osd-logo img{filter:drop-shadow(0 0 .2rem rgba(0,0,0,.35))}
+
 
 /* The old banner is replaced by the shared panel */
 #osd{display:none!important}
@@ -877,7 +905,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.5'; // bumped with every release
+const BUILD = '4.6'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -3578,95 +3606,45 @@ function renderMob(full) {
   list.innerHTML = items.length ? items.slice(0, S.mlim).map(mobRow).join('') : `<p class="tip" style="padding:1rem">${S.mt === 'fav' ? 'Empty for now. Tap the star next to a channel to add it here.' : 'Nothing found.'}</p>`;
   if (full) list.scrollTop = 0;
 }
+/* Phone guide: a grid like Google TV — channels down, time across, the "now" line; swipe in both directions */
+const MG_K = 7 / 30; // rem per minute
 function renderMobProg() {
-  const ch = S.channels[S.cur], box = $('#mProg');
-  const a = ch && ch.epgId ? S.epg.get(ch.epgId) : null;
-  if (!a || !a.length) { box.innerHTML = `<p class="tip" style="padding:1rem">${S.epgLoading ? 'TV guide is loading…' : 'No TV guide for this channel.'}</p>`; return; }
-  const now = Date.now(); let day = '', html = '';
-  a.filter(p => p.e > now - (ch.cu ? (ch.cuDays || 3) * 86400e3 : 3 * 3600e3)).forEach((p, j) => {
-    const d = dayName(p.s);
-    if (d !== day) { day = d; html += `<div class="m-day">${esc(d)}</div>`; }
-    const cls = p.s <= now && now < p.e ? 'now' : p.e <= now ? (archiveUrl(ch, p) ? 'arch' : 'past') : '';
-    html += `<div class="m-p ${cls}" data-s="${p.s}"><time>${tm(p.s)}</time><div><b>${esc(p.t)}</b>${p.d && cls === 'now' ? `<small>${esc(p.d)}</small>` : ''}</div></div>`;
+  const box = $('#mProg'), now = Date.now();
+  const t0 = Math.floor((now - 24 * 3600e3) / 1800000) * 1800000, t1 = Math.floor((now + 8 * 3600e3) / 1800000) * 1800000, X = m => ((m - t0) / 60000 * MG_K);
+  const chips = [['all', 'All']].concat(favList().length ? [['__fav', 'Favorites']] : [], S.groups.map(g => [g.title, gLabel(g.title)]));
+  const prevL = box.querySelector('.mg-scroll') ? box.querySelector('.mg-scroll').scrollLeft : null, prevT = box.querySelector('.mg-scroll') ? box.querySelector('.mg-scroll').scrollTop : 0;
+  const items = mobItems().slice(0, 80); S.mgItems = items;
+  let head = ''; for (let t = t0; t < t1; t += 1800000) head += `<b style="left:${X(t).toFixed(2)}rem">${tm(t)}</b>`;
+  let rows = '';
+  items.forEach(ci => {
+    const ch = S.channels[ci], nn = nowNext(ch), a = ch.epgId ? S.epg.get(ch.epgId) : null;
+    const progs = a ? a.filter(p => p.e > t0 && p.s < t1) : [];
+    rows += `<div class="mg-row"><div class="mg-ch${ci === S.cur ? ' on' : ''}" data-ci="${ci}">${logoBox(ch, 'llogo')}<div><b>${esc(nn.now ? nn.now.t : ch.name)}</b><small>${esc(ch.name)}${nn.now ? ` · ${minsLeft(nn.now)} min` : ''}</small></div></div><div class="mg-tl">` +
+      (progs.length ? progs.map(p => {
+        const l = Math.max(0, X(p.s)), w = Math.max(1.2, X(Math.min(p.e, t1)) - l - .25);
+        const cls = p.s <= now && now < p.e ? 'now' : p.e <= now ? (archiveUrl(ch, p) ? 'arch' : 'past') : 'fut';
+        return `<div class="mg-p ${cls}" data-ci="${ci}" data-s="${p.s}" style="left:${l.toFixed(2)}rem;width:${w.toFixed(2)}rem"><b>${esc(p.t)}</b><small>${tm(p.s)}</small></div>`;
+      }).join('') : `<div class="mg-p none" data-ci="${ci}" style="left:${X(now - 1800000).toFixed(2)}rem;width:20rem"><b>${S.epgLoading ? 'TV guide is loading…' : 'No TV guide'}</b></div>`) + '</div></div>';
   });
-  box.innerHTML = html;
-  const nowEl = box.querySelector('.m-p.now'); if (nowEl) box.scrollTop = Math.max(0, nowEl.offsetTop - box.offsetTop - 80);
+  box.innerHTML = `<div class="m-chips mg-chips">${chips.map(([v, t]) => `<button data-g="${esc(v)}" class="${v === S.mg ? 'on' : ''}">${esc(t)}</button>`).join('')}</div>` +
+    `<div class="mg-scroll"><div class="mg-inner" style="width:calc(10.5rem + ${X(t1).toFixed(2)}rem)"><div class="mg-head"><div class="mg-corner"></div><div class="mg-times">${head}<i class="mg-nowt" style="left:${X(now).toFixed(2)}rem">${tm(now)}</i></div></div>` +
+    `<div class="mg-body">${rows}<div class="mg-now" style="left:calc(10.5rem + ${X(now).toFixed(2)}rem)"></div></div></div></div>`;
+  const sc = box.querySelector('.mg-scroll'), rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  sc.scrollLeft = prevL != null ? prevL : Math.max(0, (X(now) - 5) * rem); sc.scrollTop = prevT;
 }
-function openMobSheet() {
-  const skip = new Set(['TV Guide', 'All channels', 'Search channels']);
-  S.optIt = optItems().filter(o => !skip.has(o.t));
-  const chips = varChips(S.channels[S.cur]); S.mchips = chips; let last = '';
-  $('#mSheetIn').innerHTML = (chips.length ? '<div class="ctl-vars m-vars">' + chips.map((c, i) => {
-      const lbl = c.k !== last ? `<span class="vl">${{ q: 'Quality', z: 'Time zone', o: '' }[c.k]}</span>` : ''; last = c.k;
-      return lbl + `<span class="vc${c.on ? ' on' : ''}" data-c="${i}">${esc(c.t)}</span>`; }).join('') + '</div>' : '') +
-    S.optIt.filter(o => o.t !== 'Channel version').map(o => `<div class="opt" data-i="${S.optIt.indexOf(o)}">${esc(o.t)}${o.v ? `<span>${esc(o.v)}</span>` : ''}</div>`).join('');
-  $('#mSheet').classList.remove('hidden');
-}
-$('#mSheet').addEventListener('click', e => {
-  const vc = e.target.closest('.vc');
-  if (vc) { const c = S.mchips[+vc.dataset.c]; if (c) { pickChip(S.cur, c); setTimeout(() => { openMobSheet(); renderMobNow(); }, 60); } return; }
-  if (e.target.closest('.m-cast')) return;
-  const it = e.target.closest('.opt');
-  if (!it) { $('#mSheet').classList.add('hidden'); return; }
-  const o = S.optIt[+it.dataset.i]; if (o) o.act();
-  setTimeout(() => { if (S.mode === 'watch' || S.mode === 'opts') { setMode('watch'); openMobSheet(); } renderMobNow(); }, 50);
-});
-$('#mOpt').onclick = () => { if (S.cur >= 0) openMobSheet(); };
-/* ---------- Watch on TV: the phone sends only a command, the TV plays the stream itself ---------- */
-const castTopic = code => PAIR_HUB + hex(sha256(utf8('setvix-cast|' + code))).slice(0, 24);
-async function castSend(ci) {
-  const code = store.get('castLink', ''), ch = S.channels[ci]; if (!code || !ch) return false;
-  const arch = S.archive && S.archive.prog ? { s: S.archive.prog.s, e: S.archive.prog.e, t: S.archive.prog.t } : null;
-  try {
-    const r = await fetch(castTopic(code), { method: 'POST', body: pairSeal({ a: 'play', key: ch.key, name: ch.name, arch }, 'cast|' + code) });
-    if (!r.ok) throw new Error('relay ' + r.status);
-    try { if (NATIVE) SetvixNative.pause(); else video.pause(); } catch (e) {}
-    S.paused = true; $('#mCast').classList.add('on');
-    toast(`“${ch.name}” is playing on your TV`, 3500); return true;
-  } catch (e) { toast('Could not reach the TV: ' + e.message, 4000); return false; }
-}
-function openCastSheet() {
-  const linked = store.get('castLink', '');
-  $('#mSheetIn').innerHTML = `<div class="m-cast">` + (linked
-    ? `<p>Linked to your TV. Pick any channel here and tap the TV button to watch it there.</p><button id="castGo">Play this channel on TV</button><button class="s" id="castUnlink">Unlink TV</button>`
-    : `<p>On your TV open Settings and choose “Phone remote”. Enter the 8-digit code shown there.</p><input id="castIn" inputmode="numeric" maxlength="9" placeholder="1234 5678"><button id="castLinkBtn">Link TV</button>`) + `</div>`;
-  $('#mSheet').classList.remove('hidden');
-  const go = $('#castGo'), un = $('#castUnlink'), lk = $('#castLinkBtn');
-  if (go) go.onclick = e => { e.stopPropagation(); $('#mSheet').classList.add('hidden'); castSend(S.cur); };
-  if (un) un.onclick = e => { e.stopPropagation(); store.set('castLink', ''); $('#mCast').classList.remove('on'); $('#mSheet').classList.add('hidden'); toast('TV unlinked', 2000); };
-  if (lk) lk.onclick = e => {
-    e.stopPropagation(); const c = $('#castIn').value.replace(/\D/g, '');
-    if (c.length !== 8) { toast('The code has 8 digits', 2500); return; }
-    store.set('castLink', c); $('#mSheet').classList.add('hidden'); castSend(S.cur);
-  };
-  const inp = $('#castIn'); if (inp) { inp.onclick = e => e.stopPropagation(); setTimeout(() => inp.focus(), 100); }
-}
-$('#mCast').onclick = () => { if (S.cur < 0) return; if (store.get('castLink', '')) castSend(S.cur); else openCastSheet(); };
-$('#mCast').oncontextmenu = e => { e.preventDefault(); openCastSheet(); };
-$('#mFav').onclick = () => { if (S.cur >= 0) { toggleFav(S.cur); renderMob(true); } };
-document.querySelectorAll('.m-tabs button').forEach(b => b.onclick = () => {
-  if (b.dataset.t === 'set') { openSettings(); return; }
-  if (b.dataset.t === 'vod') { openVod(); return; }
-  S.mt = b.dataset.t; S.mlim = 120; renderMob(true);
-});
-$('#mGroups').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.mg = b.dataset.g; store.set('mg', S.mg); S.mlim = 120; renderMob(true); });
-$('#mSearch').addEventListener('input', () => { S.mq = $('#mSearch').value; S.mlim = 120; renderMob(false); $('#mGroups').style.display = S.mq ? 'none' : ''; });
-$('#mList').addEventListener('click', e => { const it = e.target.closest('.li'); if (!it) return; const ci = +it.dataset.ci; S.zapItems = S.mitems && S.mitems.length > 1 && !S.mq ? S.mitems.slice() : null; play(ci); renderMob(false); });
-$('#mList').addEventListener('scroll', () => {
-  const l = $('#mList');
-  if (l.scrollTop + l.clientHeight > l.scrollHeight - 400 && S.mitems && S.mlim < S.mitems.length) {
-    const from = S.mlim; S.mlim += 120;
-    l.insertAdjacentHTML('beforeend', S.mitems.slice(from, S.mlim).map(mobRow).join(''));
-  }
-});
 $('#mProg').addEventListener('click', e => {
-  const it = e.target.closest('.m-p'); if (!it) return;
-  const ch = S.channels[S.cur]; const p = (S.epg.get(ch.epgId) || []).find(x => x.s === +it.dataset.s); if (!p) return;
+  const chip = e.target.closest('.mg-chips button');
+  if (chip) { S.mg = chip.dataset.g; store.set('mg', S.mg); const sc = $('#mProg .mg-scroll'); if (sc) sc.scrollTop = 0; renderMobProg(); return; }
+  const c = e.target.closest('.mg-ch'); if (c) { playAndWatch(+c.dataset.ci, S.mgItems); setTimeout(() => { renderMobNow(); renderMobProg(); }, 120); return; }
+  const it = e.target.closest('.mg-p'); if (!it) return;
+  const ci = +it.dataset.ci, ch = S.channels[ci]; if (!ch) return;
+  if (!it.dataset.s) { playAndWatch(ci, S.mgItems); return; }
+  const p = (S.epg.get(ch.epgId) || []).find(x => x.s === +it.dataset.s); if (!p) return;
   const now = Date.now();
-  if (p.s <= now && now < p.e) { play(S.cur); }
-  else if (p.e <= now) { playArchive(S.cur, p); setMode('watch'); }
-  else toast(`The show starts at ${tm(p.s)}`, 2500);
-  setTimeout(renderMobNow, 100);
+  if (p.s <= now && now < p.e) playAndWatch(ci, S.mgItems);
+  else if (p.e <= now) { if (archiveUrl(ch, p)) { playArchive(ci, p); setMode('watch'); } else toast('No recording for this show', 2500); }
+  else toast(`${p.t} starts at ${tm(p.s)}`, 2500);
+  setTimeout(() => { renderMobNow(); renderMobProg(); }, 120);
 });
 
 /* Landscape phone: full-screen video, swipe up/down to zap */
