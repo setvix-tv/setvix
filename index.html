@@ -2,6 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>
+/* Version channel: Stable (this page) or Test (new features first, from /setvix/test/).
+   Same device storage, so playlists and settings are shared. Default is Stable.
+   If the Test version fails to start twice in a row, Setvix goes back to Stable by itself. */
+(function () {
+  try {
+    if (window.__svTest || /\/test\//.test(location.pathname)) return;
+    if (localStorage.getItem('setvix:chan') !== '"test"') return;
+    if (sessionStorage.getItem('svSkipTest')) return;
+    var tries = +(localStorage.getItem('setvix:testBoot') || 0);
+    if (tries >= 2) {
+      localStorage.setItem('setvix:chan', '"stable"'); localStorage.removeItem('setvix:testBoot');
+      localStorage.setItem('setvix:testFailed', String(Date.now())); return;
+    }
+    localStorage.setItem('setvix:testBoot', String(tries + 1));
+    var app = location.hostname === 'setvix.local';
+    var url = function () {
+      var abs = 'https://setvix-tv.github.io/setvix/test/index.html?v=' + Date.now();
+      return app ? '/proxy?url=' + encodeURIComponent(abs) : 'test/index.html?v=' + Date.now();
+    };
+    window.__svTest = true; window.SV_SELF = url;
+    var fail = function () { try { sessionStorage.setItem('svSkipTest', '1'); } catch (e) {} location.reload(); };
+    document.write('<plaintext style="display:none">'); // stop the stable page right here
+    var x = new XMLHttpRequest(); x.open('GET', url()); x.timeout = 20000;
+    x.onload = function () {
+      if (x.status !== 200 || x.responseText.indexOf('const BUILD') < 0) return fail();
+      document.open(); document.write(x.responseText); document.close();
+    };
+    x.onerror = x.ontimeout = fail; x.send();
+  } catch (e) {}
+})();
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0C1424">
 <title>Setvix TV</title>
@@ -772,7 +804,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
     <div class="btns">
       <button id="btnView"></button>
       <button id="btnGroups">Channel categories</button>
-      <button id="btnAutoQ"></button>
+      <button id="btnAutoQ"></button><button id="btnChan"></button>
       <button id="btnCast"></button>
       <button id="btnAuto"></button>
       <button id="btnEpg">Check TV guide</button>
@@ -962,7 +994,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.9.4'; // bumped with every release
+const BUILD = '4.9.4.1'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -3059,6 +3091,18 @@ $('#btnGroups').onclick = () => openGroups();
 function autoQLabel() { $('#btnAutoQ').textContent = 'Auto quality on slow internet: ' + (store.get('autoQ', true) ? 'on' : 'off'); }
 $('#btnAutoQ').onclick = () => { store.set('autoQ', !store.get('autoQ', true)); autoQLabel(); };
 autoQLabel();
+/* Version: Stable or Test (new features first). Playlists and settings are shared; Test falls back to Stable by itself if it fails to start */
+const IN_TEST = !!window.__svTest || /\/test\//.test(location.pathname);
+function chanLabel() { $('#btnChan').textContent = 'Version: ' + (IN_TEST ? 'Test (new features first)' : 'Stable') + ' · ' + BUILD; }
+$('#btnChan').onclick = () => {
+  const toTest = !IN_TEST;
+  store.set('chan', toTest ? 'test' : 'stable');
+  try { localStorage.removeItem('setvix:testBoot'); sessionStorage.removeItem('svSkipTest'); } catch (e) {}
+  toast(toTest ? 'Switching to the Test version…' : 'Switching to the Stable version…', 2500);
+  setTimeout(() => { if (/\/test\//.test(location.pathname)) location.href = '../'; else location.reload(); }, 900);
+};
+chanLabel();
+try { const tf = +localStorage.getItem('setvix:testFailed'); if (tf) { localStorage.removeItem('setvix:testFailed'); if (Date.now() - tf < 600000) setTimeout(() => toast('The Test version did not start, so Setvix went back to Stable.', 7000), 3000); } } catch (e) {}
 $('#gselList').addEventListener('click', e => { const it = e.target.closest('.li'); if (!it) return; S.gs = +it.dataset.j; gselKey('ok'); });
 
 /* ---------- App self-update ---------- */
@@ -3650,7 +3694,7 @@ tick(); setInterval(tick, 10000); setInterval(refreshNow, 30000);
   store.set('build', BUILD);
   async function check() {
     try {
-      const r = await fetch('index.html?v=' + Date.now(), { cache: 'no-store' });
+      const r = await fetch(window.SV_SELF ? window.SV_SELF() : 'index.html?v=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) return;
       const m = /const BUILD = '([^']+)'/.exec(await r.text());
       if (m && m[1] !== BUILD) {

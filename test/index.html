@@ -2,6 +2,38 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<script>
+/* Version channel: Stable (this page) or Test (new features first, from /setvix/test/).
+   Same device storage, so playlists and settings are shared. Default is Stable.
+   If the Test version fails to start twice in a row, Setvix goes back to Stable by itself. */
+(function () {
+  try {
+    if (window.__svTest || /\/test\//.test(location.pathname)) return;
+    if (localStorage.getItem('setvix:chan') !== '"test"') return;
+    if (sessionStorage.getItem('svSkipTest')) return;
+    var tries = +(localStorage.getItem('setvix:testBoot') || 0);
+    if (tries >= 2) {
+      localStorage.setItem('setvix:chan', '"stable"'); localStorage.removeItem('setvix:testBoot');
+      localStorage.setItem('setvix:testFailed', String(Date.now())); return;
+    }
+    localStorage.setItem('setvix:testBoot', String(tries + 1));
+    var app = location.hostname === 'setvix.local';
+    var url = function () {
+      var abs = 'https://setvix-tv.github.io/setvix/test/index.html?v=' + Date.now();
+      return app ? '/proxy?url=' + encodeURIComponent(abs) : 'test/index.html?v=' + Date.now();
+    };
+    window.__svTest = true; window.SV_SELF = url;
+    var fail = function () { try { sessionStorage.setItem('svSkipTest', '1'); } catch (e) {} location.reload(); };
+    document.write('<plaintext style="display:none">'); // stop the stable page right here
+    var x = new XMLHttpRequest(); x.open('GET', url()); x.timeout = 20000;
+    x.onload = function () {
+      if (x.status !== 200 || x.responseText.indexOf('const BUILD') < 0) return fail();
+      document.open(); document.write(x.responseText); document.close();
+    };
+    x.onerror = x.ontimeout = fail; x.send();
+  } catch (e) {}
+})();
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0C1424">
 <title>Setvix TV</title>
@@ -47,6 +79,11 @@ body.m-list #shade{opacity:0}
 .brand i{display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:var(--amber);margin-left:.25rem}
 .tb{font-weight:600;font-size:1.05rem;color:var(--text);background:rgba(237,240,246,.08);border:0;border-radius:2rem;padding:.65rem 1.3rem;transition:transform .15s,background .15s,color .15s}
 .tb.focused{background:var(--amber);color:var(--ink);transform:scale(1.06)}
+/* My playlists: add box with one big OK button */
+.pls-add-box{display:none;margin:.4rem 0 1rem;padding:1rem 1.2rem;border-radius:1rem;background:rgba(237,240,246,.05)}
+.pls-add-box.open{display:block}
+#settings .ok-btn{background:var(--amber);color:var(--ink);font-weight:700;min-width:9rem}
+#settings .pls-add-btn{font-weight:700}
 /* Time zone dots: shown only when the playlist has +2/+4… versions of channels */
 .tz-tb{display:flex;align-items:center;gap:.5rem;padding:.4rem .8rem;flex:none}
 /* Keep the top bar on one line when the time dots are shown */
@@ -786,11 +823,17 @@ body.mob #vod,body.mob #vodd{z-index:9}
     <button id="btnPair" class="pair-btn">Connect from phone</button>
     <h3 class="st-h">Playlists</h3>
     <div class="btns st-pls" id="plsChips"></div>
+    <div class="btns"><button id="btnPlsAdd" class="pls-add-btn">+ Add playlist</button><button id="btnPlsDel">Remove playlist</button></div>
+    <div id="plsAdd" class="pls-add-box">
+      <label class="field"><span>Playlist link (M3U)</span><input id="inNewPl" type="url" inputmode="url" placeholder="http://…/playlist.m3u8" autocomplete="off" spellcheck="false"></label>
+      <label class="field"><span>Name (optional)</span><input id="inNewName" type="text" placeholder="My TV" autocomplete="off" spellcheck="false"></label>
+      <div class="btns"><button id="btnPlOk" class="ok-btn">OK — Save</button><button id="btnPlPhone">From phone (QR)</button><button id="btnPlCancel">Cancel</button></div>
+    </div>
     <h3 class="st-h">Viewing</h3>
     <div class="btns">
       <button id="btnView"></button>
       <button id="btnGroups">Channel categories</button>
-      <button id="btnAutoQ"></button>
+      <button id="btnAutoQ"></button><button id="btnChan"></button>
       <button id="btnQPref"></button>
       <button id="btnCast"></button>
       <button id="btnAuto"></button>
@@ -804,7 +847,6 @@ body.mob #vod,body.mob #vodd{z-index:9}
       <label class="field"><span>VPortal movie library (optional)</span><input id="inVp" type="text" placeholder="portal::[key:…]http://…/api/v1/" autocomplete="off" spellcheck="false"></label>
       <div class="btns">
         <button id="btnSave">Save and load</button>
-        <button id="btnPlsDel">Remove this playlist</button>
         <button id="btnDiag">Test channel</button>
         <button id="btnFx"></button>
         <button id="btnDemo">Demo channels</button>
@@ -981,7 +1023,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.9.6'; // bumped with every release
+const BUILD = '4.9.7'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -3175,6 +3217,18 @@ $('#btnGroups').onclick = () => openGroups();
 function autoQLabel() { $('#btnAutoQ').textContent = 'Auto quality on slow internet: ' + (store.get('autoQ', true) ? 'on' : 'off'); }
 $('#btnAutoQ').onclick = () => { store.set('autoQ', !store.get('autoQ', true)); autoQLabel(); };
 autoQLabel();
+/* Version: Stable or Test (new features first). Playlists and settings are shared; Test falls back to Stable by itself if it fails to start */
+const IN_TEST = !!window.__svTest || /\/test\//.test(location.pathname);
+function chanLabel() { $('#btnChan').textContent = 'Version: ' + (IN_TEST ? 'Test (new features first)' : 'Stable') + ' · ' + BUILD; }
+$('#btnChan').onclick = () => {
+  const toTest = !IN_TEST;
+  store.set('chan', toTest ? 'test' : 'stable');
+  try { localStorage.removeItem('setvix:testBoot'); sessionStorage.removeItem('svSkipTest'); } catch (e) {}
+  toast(toTest ? 'Switching to the Test version…' : 'Switching to the Stable version…', 2500);
+  setTimeout(() => { if (/\/test\//.test(location.pathname)) location.href = '../'; else location.reload(); }, 900);
+};
+chanLabel();
+try { const tf = +localStorage.getItem('setvix:testFailed'); if (tf) { localStorage.removeItem('setvix:testFailed'); if (Date.now() - tf < 600000) setTimeout(() => toast('The Test version did not start, so Setvix went back to Stable.', 7000), 3000); } } catch (e) {}
 /* Picture quality preference: Auto (economy on slow internet), Economy (HD first), Best (4K first) */
 const Q_PREFS = { auto: 'Auto', eco: 'Economy (HD, for slow internet)', best: 'Best (Full HD and 4K)' };
 function qPrefLabel() {
@@ -3256,7 +3310,7 @@ function castPlay(d) {
 const fEls = () => [...document.querySelectorAll('#settings .sheet button, #settings .sheet input')].filter(el => el.offsetParent !== null);
 function openSettings(first) {
   hideSplash();
-  $('#inM3u').value = store.get('m3u', ''); $('#inEpg').value = store.get('epg', '');
+  $('#inM3u').value = store.get('m3u', '') === FREE_URL ? '' : store.get('m3u', ''); $('#inEpg').value = store.get('epg', ''); // never show the internal "setvix:free"
   $('#setIntro').textContent = first || !S.channels.length
     ? 'The easiest way is to connect from your phone, where it’s easy to paste the playlist link.'
     : 'Links are stored only on this device.';
@@ -3280,10 +3334,13 @@ function renderSettings() {
 /* Arrow keys move to the nearest control in that direction */
 function settingsMove(dir) {
   const els = fEls(), cur = els[S.sf]; if (!cur) return;
-  const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+  const r = cur.getBoundingClientRect(), cy = r.top + r.height / 2;
+  /* From a wide input field, aim at its left edge: "down" lands on the first button of the row (OK — Save), not the middle one */
+  const cx = cur.tagName === 'INPUT' || r.width > innerWidth * 0.4 ? r.left + 60 : r.left + r.width / 2;
   let best = -1, bd = Infinity;
   els.forEach((el, i) => {
-    if (i === S.sf) return; const q = el.getBoundingClientRect(), x = q.left + q.width / 2, y = q.top + q.height / 2;
+    if (i === S.sf) return; const q = el.getBoundingClientRect(), y = q.top + q.height / 2;
+    const x = el.tagName === 'INPUT' || q.width > innerWidth * 0.4 ? q.left + 60 : q.left + q.width / 2; // wide fields line up by their left edge
     const dx = x - cx, dy = y - cy;
     const ok = dir === 'up' ? dy < -4 : dir === 'down' ? dy > 4 : dir === 'left' ? (dx < -4 && Math.abs(dy) < r.height) : (dx > 4 && Math.abs(dy) < r.height);
     if (!ok) return; const d = (dir === 'up' || dir === 'down') ? Math.abs(dy) * 3 + Math.abs(dx) : Math.abs(dx);
@@ -3516,6 +3573,33 @@ $('#btnView').onclick = () => {
   setChannels(S.raw); setStatus(`${curView().name}: ${S.channels.length} channels. Press “Close” to watch.`);
   startEPG(epgUrl());
 };
+/* ---------- My playlists: add with one field and a big OK ---------- */
+function plAddOpen(on) {
+  $('#plsAdd').classList.toggle('open', on);
+  if (on) { $('#inNewPl').value = ''; $('#inNewName').value = ''; setStatus('Paste the playlist link, then press OK — Save.'); }
+  renderSettings();
+  if (on) { S.sf = fEls().indexOf($('#inNewPl')); renderSettings(); }
+}
+function plAddSave() {
+  const m = $('#inNewPl').value.trim(), name = $('#inNewName').value.trim();
+  if (!/^https?:\/\//i.test(m)) { setStatus('Paste a link that starts with http:// or https://', true); S.sf = fEls().indexOf($('#inNewPl')); renderSettings(); return; }
+  $('#btnPlOk').textContent = 'Loading…';
+  applyPlaylist(m, store.get('epg', ''), setStatus, name || undefined).then(ok => {
+    $('#btnPlOk').textContent = 'OK — Save';
+    if (!ok) return;
+    plAddOpen(false); plsLabels();
+    setStatus(`Saved: ${S.channels.length} channels. Press “Close” to watch.`);
+    S.sf = fEls().indexOf($('#btnClose')); renderSettings();
+  });
+}
+$('#btnPlsAdd').onclick = () => plAddOpen(!$('#plsAdd').classList.contains('open'));
+$('#btnPlCancel').onclick = () => { plAddOpen(false); setStatus(''); };
+$('#btnPlPhone').onclick = () => { plAddOpen(false); $('#btnPair').click(); };
+$('#btnPlOk').onclick = plAddSave;
+['#inNewPl', '#inNewName'].forEach(id => $(id).addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.keyCode !== 13) return;
+  e.preventDefault(); e.stopPropagation(); $(id).blur(); plAddSave();
+}));
 $('#btnPlsDel').onclick = () => {
   const m = store.get('m3u', ''); if (m === FREE_URL) return;
   const rest = plsList().filter(p => p.url !== m); store.set('pls', rest);
@@ -3606,6 +3690,7 @@ async function boot() {
     if (cache && cache.length) { setChannels(cache); toast('The playlist didn’t refresh, showing the saved list.'); }
     else { hideLoader(); openSettings(); setStatus('Could not load the playlist: ' + err.message, true); return; }
   }
+  try { localStorage.removeItem('setvix:testBoot'); } catch (e) {} // started fine: reset the Test fallback counter
   hintOnce(); startLast(); setTimeout(hideSplash, 6000); setTimeout(checkApk, 4000); setTimeout(castListen, 8000);
   if (!S.demo) startEPG(epgUrl());
 }
@@ -3793,7 +3878,7 @@ tick(); setInterval(tick, 10000); setInterval(refreshNow, 30000);
   store.set('build', BUILD);
   async function check() {
     try {
-      const r = await fetch('index.html?v=' + Date.now(), { cache: 'no-store' });
+      const r = await fetch(window.SV_SELF ? window.SV_SELF() : 'index.html?v=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) return;
       const m = /const BUILD = '([^']+)'/.exec(await r.text());
       if (m && m[1] !== BUILD) {
