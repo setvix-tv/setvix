@@ -981,7 +981,7 @@ body.mob #vod,body.mob #vodd{z-index:9}
 const $ = s => document.querySelector(s);
 const video = $('#video');
 const ROWH = 14.8, STEP = 13.4; // rem, matches the CSS
-const BUILD = '4.9.5'; // bumped with every release
+const BUILD = '4.9.6'; // bumped with every release
 const APP = location.hostname === 'setvix.local'; // running inside the TV box APK
 const viaApp = u => '/proxy?url=' + encodeURIComponent(u);
 /* The native ExoPlayer engine exists only in app version 2.0+ */
@@ -1068,7 +1068,10 @@ async function fetchVia(url, ms, wantM3U) {
   if (APP) variants.push(viaApp(url));
   else {
     if (location.protocol === 'https:' && /^http:/i.test(url)) variants.push('https' + url.slice(4));
-    variants.push(url, 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url), 'https://corsproxy.io/?url=' + encodeURIComponent(url));
+    variants.push(url);
+    /* Playlist links often carry the viewer's personal key: never send them through public proxy services.
+       Only non-private files (TV guide, logos) may use the proxies. */
+    if (!wantM3U) variants.push('https://api.allorigins.win/raw?url=' + encodeURIComponent(url), 'https://corsproxy.io/?url=' + encodeURIComponent(url));
   }
   let last = new Error('no response');
   for (const u of variants) {
@@ -1085,6 +1088,8 @@ async function fetchVia(url, ms, wantM3U) {
       last = e.name === 'AbortError' ? new Error('server timed out') : new Error('cannot reach the address');
     }
   }
+  if (wantM3U && !APP && !/server replied|not an M3U/.test(last.message))
+    last = new Error('this playlist can’t open in a web browser (its server blocks browsers or uses http). Open it in the Setvix app on your TV or phone — your link stays private');
   throw last;
 }
 
@@ -1516,8 +1521,10 @@ async function pakoStream(src) {
 /* Default TV guide when neither Settings nor the playlist has one */
 /* Direct HTTPS CDN address: the old http://epg.one link redirects to plain http, which browsers block (mixed content) */
 const DEFAULT_EPG = 'https://cdn.epg.one/epg2.xml.gz';
-const OLD_EPG = /^https?:\/\/(epg\.one|epg\.it999\.ru)\/(epg2?|edem)\.xml\.gz$/i;
-function epgUrl() { const u = store.get('epg', '') || store.get('epgAuto', '') || DEFAULT_EPG; return OLD_EPG.test(u) ? DEFAULT_EPG : u; }
+/* epg.one and epg.it999.ru (the iLook / Edem guides) redirect to plain http, which browsers block.
+   Same file, same content, straight from their HTTPS CDN: edem stays edem, epg stays epg. */
+const OLD_EPG = /^https?:\/\/(?:epg\.one|epg\.it999\.ru)\/((?:epg2?|edem)\.xml\.gz)(\?.*)?$/i;
+function epgUrl() { const u = store.get('epg', '') || store.get('epgAuto', '') || DEFAULT_EPG; const m = OLD_EPG.exec(u); return m ? 'https://cdn.epg.one/' + m[1] : u; }
 /* TV guide cache in IndexedDB: the box doesn’t download the big file on every start */
 function idb() {
   if (S._idb) return S._idb;
@@ -3296,6 +3303,11 @@ function setKey(k) {
   renderSettings();
 }
 document.querySelectorAll('#settings input').forEach(el => el.addEventListener('focus', () => { S.sf = fEls().indexOf(el); renderSettings(); }));
+/* Enter in the playlist or TV guide field saves, like the "Save and load" button */
+['#inM3u', '#inEpg'].forEach(id => $(id).addEventListener('keydown', e => {
+  if (e.key !== 'Enter' && e.keyCode !== 13) return;
+  e.preventDefault(); e.stopPropagation(); $(id).blur(); $('#btnSave').click();
+}));
 $('#inTmdb').addEventListener('change', () => { store.set('tmdbKey', $('#inTmdb').value.trim()); setStatus($('#inTmdb').value.trim() ? 'Posters on: films, series and cartoons will get pictures.' : 'Posters off.'); });
 function epgReport() {
   const m = S.channels.filter(c => c.epgId).length, progs = [...(S.epg || new Map()).values()].reduce((a, b) => a + b.length, 0);
@@ -3325,6 +3337,7 @@ $('#btnSave').onclick = async () => {
   applyPlaylist(m, e, setStatus);
 };
 async function applyPlaylist(m, e, report, name) {
+  const prev = { m3u: store.get('m3u', ''), epg: store.get('epg', ''), epgAuto: store.get('epgAuto', '') }; // restored if the new link fails
   store.set('m3u', m); store.set('epg', e || ''); store.set('demo', false); store.set('epgAuto', '');
   report('Loading the playlist…');
   try {
@@ -3334,7 +3347,10 @@ async function applyPlaylist(m, e, report, name) {
     report(`Channels loaded: ${S.channels.length}`);
     setTimeout(() => { startLast(); startEPG(epgUrl()); }, 700);
     return true;
-  } catch (err) { report('Could not load the playlist: ' + err.message, true); return false; }
+  } catch (err) {
+    store.set('m3u', prev.m3u); store.set('epg', prev.epg); store.set('epgAuto', prev.epgAuto); // keep the playlist that worked
+    report('Could not load the playlist: ' + err.message, true); return false;
+  }
 }
 
 /* ---------- Connect from phone (like Netflix: code on the TV, input on the phone) ---------- */
